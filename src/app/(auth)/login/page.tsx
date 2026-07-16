@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -126,9 +127,23 @@ export default function LoginPage() {
             {/* Submit */}
             <Button type="submit" disabled={isSubmitting} className="w-full" size="lg">
               {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-              {isSubmitting ? 'Signing in…' : 'Sign in'}
+              {isSubmitting ? 'Entrando…' : 'Entrar'}
             </Button>
+
+            <div className="flex items-center justify-center">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Esqueceu sua senha?
+              </Link>
+            </div>
           </form>
+
+          <p className="text-center text-xs text-muted-foreground border-t border-border pt-6">
+            Não tem uma conta?{' '}
+            <span className="font-medium">Solicite acesso ao administrador.</span>
+          </p>
         </div>
       </div>
     </div>

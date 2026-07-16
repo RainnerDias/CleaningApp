@@ -2,7 +2,13 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // Paths accessible without an active session
-const PUBLIC_PATHS = new Set(['/login', '/auth/callback', '/api/auth/me'])
+const PUBLIC_PATHS = new Set([
+  '/login',
+  '/forgot-password',
+  '/reset-password',
+  '/auth/callback',
+  '/api/auth/me',
+])
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({

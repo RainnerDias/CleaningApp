@@ -2,10 +2,17 @@ import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+function safeNextPath(raw: string | null): string {
+  if (!raw) return '/today'
+  // Must be a relative path starting with / and contain no protocol separator
+  if (raw.startsWith('/') && !raw.startsWith('//') && !raw.includes(':')) return raw
+  return '/today'
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/today'
+  const next = safeNextPath(searchParams.get('next'))
 
   if (code) {
     const supabase = await createServerClient()
