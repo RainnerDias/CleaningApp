@@ -35,6 +35,7 @@ const selectClass =
  */
 export function EditUserDialog({ open, onOpenChange, user }: EditUserDialogProps) {
   const updateUser = useUpdateUser()
+  const { reset: resetMutation } = updateUser
 
   const {
     register,
@@ -52,9 +53,9 @@ export function EditUserDialog({ open, onOpenChange, user }: EditUserDialogProps
       reset({ name: user.name, role: user.role })
     } else {
       reset({ name: '', role: 'user' })
-      updateUser.reset()
+      resetMutation()
     }
-  }, [user, reset, updateUser])
+  }, [user, reset, resetMutation])
 
   const onSubmit = async (data: UpdateUserSchema) => {
     if (!user) return
