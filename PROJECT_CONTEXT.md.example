@@ -1,0 +1,130 @@
+# PROJECT_CONTEXT.md
+# Project-Specific Context for the AI Development Framework
+#
+# HOW TO USE THIS FILE:
+# 1. Copy this file to PROJECT_CONTEXT.md in the project root.
+# 2. Fill in each section with your project's details.
+# 3. Delete any section that does not apply.
+# 4. Rules here override both CLAUDE.md and constitution.md.
+#    More specific always wins.
+#
+# The Technical Director reads this file at the start of every session.
+# Keep it accurate — outdated context is worse than no context.
+
+---
+
+## Project Identity
+
+**Name:** [Project name]
+**Description:** [1-2 sentence description of what this system does and who uses it]
+**Domain:** [e.g., fintech / healthcare / e-commerce / internal tooling / SaaS]
+**Status:** [e.g., Active development / Maintenance / Pre-launch]
+
+---
+
+## Tech Stack
+
+### Backend
+- **Language:** [e.g., Python 3.12 / Node.js 20 / Go 1.22 / Java 21]
+- **Framework:** [e.g., FastAPI / Express / Gin / Spring Boot]
+- **Database:** [e.g., PostgreSQL 16 / MongoDB 7 / MySQL 8]
+- **Cache:** [e.g., Redis 7 / Memcached / none]
+- **Message Queue:** [e.g., RabbitMQ / Kafka / SQS / none]
+- **Auth:** [e.g., JWT + refresh tokens / OAuth2 / Auth0 / Cognito]
+
+### Frontend
+- **Framework:** [e.g., React 18 / Next.js 14 / Vue 3 / Angular / none]
+- **Styling:** [e.g., Tailwind CSS / CSS Modules / styled-components / none]
+- **State Management:** [e.g., Redux Toolkit / Zustand / Pinia / none]
+- **Testing:** [e.g., Jest + React Testing Library / Vitest / Playwright]
+
+### Infrastructure
+- **Cloud:** [e.g., AWS / GCP / Azure / on-premise]
+- **Container Orchestration:** [e.g., Kubernetes / ECS / none]
+- **CI/CD:** [e.g., GitHub Actions / GitLab CI / Jenkins / CircleCI]
+- **IaC:** [e.g., Terraform / CDK / Pulumi / none]
+- **Observability:** [e.g., Datadog / Grafana + Prometheus / CloudWatch]
+
+---
+
+## Repository Structure
+
+```
+[Paste or describe your repository layout here]
+```
+
+---
+
+## Team Structure
+
+| Role | Responsibility |
+|---|---|
+| [e.g., Backend Lead] | [e.g., API design, database, performance] |
+| [e.g., Frontend Lead] | [e.g., UI components, accessibility] |
+| [e.g., DevOps] | [e.g., CI/CD, infrastructure, deployments] |
+
+---
+
+## Environments
+
+| Environment | URL / Endpoint | Purpose |
+|---|---|---|
+| Development | [e.g., http://localhost:8000] | Local developer environment |
+| Staging | [e.g., https://staging.example.com] | Pre-production validation |
+| Production | [e.g., https://api.example.com] | Live system |
+
+---
+
+## Conventions
+
+### Code
+- **Linter:** [e.g., ESLint + Prettier / Ruff / golangci-lint]
+- **Test framework:** [e.g., pytest / Jest / Go test]
+- **API style:** [e.g., REST / GraphQL / gRPC]
+- **API versioning:** [e.g., URL path /v1/ / header-based / none]
+- **Error response format:** [e.g., { "error": { "code": "...", "message": "..." } }]
+
+### Git
+- **Default branch:** [e.g., main]
+- **Branch naming:** [e.g., feat/<ticket-id>-short-description]
+- **PR template location:** [e.g., .github/pull_request_template.md]
+- **Required reviewers:** [e.g., 1 / 2 / lead approval required for X]
+
+---
+
+## Project-Specific Rules
+
+> Rules here override CLAUDE.md and constitution.md. Add only rules that differ from the framework defaults.
+
+- [e.g., "All database queries must use the ORM — raw SQL is not permitted except in explicitly annotated performance-critical methods."]
+- [e.g., "The `payments` module requires two reviewers before merging — one must be the Backend Lead."]
+- [e.g., "Security review is mandatory for ALL pull requests, not just those touching auth or PII."]
+- [e.g., "Test coverage threshold is 95% for the `core` module, 80% for everything else."]
+
+---
+
+## External Dependencies and Integrations
+
+| Integration | Purpose | Documentation |
+|---|---|---|
+| [e.g., Stripe] | [e.g., Payment processing] | [e.g., https://docs.stripe.com] |
+| [e.g., SendGrid] | [e.g., Transactional email] | [e.g., https://docs.sendgrid.com] |
+
+---
+
+## Known Constraints and Non-Obvious Decisions
+
+> Document architectural decisions, workarounds, or constraints that aren't obvious from reading the code.
+
+- [e.g., "The user session store uses Redis with a 30-minute TTL. This was a deliberate trade-off — see ADR-003."]
+- [e.g., "We do not use database transactions in the reporting module due to read-replica routing. Writes still use transactions."]
+- [e.g., "The frontend uses polling for real-time updates instead of WebSockets. WebSocket support is blocked by our current CDN configuration (Cloudfront + WAF)."]
+
+---
+
+## Open Questions and Active Decisions
+
+> Things the team is still deciding. Remove items once resolved.
+
+- [ ] [e.g., "Evaluating whether to migrate from REST to GraphQL for the partner API — decision expected 2025-Q1."]
+- [ ] [e.g., "Database sharding strategy for the events table — current volume is approaching partition limits."]

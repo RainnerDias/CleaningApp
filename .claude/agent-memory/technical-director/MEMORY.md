@@ -1,0 +1,1 @@
+- [Prisma 7 + TypeScript 7 ecosystem notes](project-prisma7-ts7-ecosystem.md) — Prisma 7 URL config moved to prisma.config.ts; TS7 broke eslint-config-next, workaround in eslint.config.js

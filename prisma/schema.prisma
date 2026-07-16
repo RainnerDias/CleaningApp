@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  admin
+  user
+}
+
+enum FrequencyType {
+  daily
+  weekly
+  biweekly
+  monthly
+  custom
+}
+
+enum ScheduleStatus {
+  pending
+  completed
+  skipped
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+// ---------------------------------------------------------------------------
+// Models
+// ---------------------------------------------------------------------------
+
+model User {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  role      Role     @default(user)
+  active    Boolean  @default(true)
+  avatarUrl String?  @map("avatar_url") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  schedules Schedule[]
+  comments  TaskComment[]
+  photos    TaskPhoto[]
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+model Room {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String   @db.VarChar(255)
+  icon         String   @db.VarChar(100)
+  color        String   @db.VarChar(50)
+  displayOrder Int      @default(0) @map("display_order")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tasks Task[]
+
+  @@map("rooms")
+}
+
+model Category {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @db.VarChar(255)
+  color     String   @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tasks Task[]
+
+  @@map("categories")
+}
+
+model Task {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roomId           String   @map("room_id") @db.Uuid
+  categoryId       String?  @map("category_id") @db.Uuid
+  title            String   @db.VarChar(255)
+  description      String?  @db.Text
+  estimatedMinutes Int      @default(30) @map("estimated_minutes")
+  priority         Priority @default(medium)
+  active           Boolean  @default(true)
+  goldenRuleApplies Boolean  @default(true) @map("golden_rule_applies")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  room      Room      @relation(fields: [roomId], references: [id])
+  category  Category? @relation(fields: [categoryId], references: [id])
+  frequency Frequency?
+  schedules Schedule[]
+
+  @@map("tasks")
+}
+
+model Frequency {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId      String        @unique @map("task_id") @db.Uuid
+  type        FrequencyType
+  daysOfWeek  Int[]         @map("days_of_week")
+  weekOfMonth Int?          @map("week_of_month")
+  dayOfMonth  Int?          @map("day_of_month")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("frequencies")
+}
+
+model Schedule {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  date        DateTime       @db.Date
+  taskId      String         @map("task_id") @db.Uuid
+  assignedTo  String         @map("assigned_to") @db.Uuid
+  status      ScheduleStatus @default(pending)
+  completedAt DateTime?      @map("completed_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  task     Task          @relation(fields: [taskId], references: [id])
+  user     User          @relation(fields: [assignedTo], references: [id])
+  comments TaskComment[]
+  photos   TaskPhoto[]
+
+  @@unique([date, taskId, assignedTo])
+  @@map("schedules")
+}
+
+model TaskComment {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scheduleId String   @map("schedule_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  comment    String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@map("task_comments")
+}
+
+model TaskPhoto {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scheduleId  String   @map("schedule_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  imageUrl    String   @map("image_url") @db.VarChar(500)
+  storagePath String   @map("storage_path") @db.VarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@map("task_photos")
+}
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String   @map("entity_type") @db.VarChar(100)
+  entityId   String   @map("entity_id") @db.VarChar(255)
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model Setting {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key         String   @unique @db.VarChar(255)
+  value       Json
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}

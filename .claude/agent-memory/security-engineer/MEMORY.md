@@ -1,0 +1,2 @@
+- [Scaffold Auth Review](project-scaffold-auth-review.md) — Supabase SSR middleware/client security review; HIGH finding on missing /auth/callback whitelist; FAIL verdict
+- [Cleaning App Security Posture](project-cleaning-app-security.md) — Phase 6.2 full audit; CONDITIONAL PASS; 3 HIGH + 7 MEDIUM findings; stack, auth architecture, confirmed controls documented

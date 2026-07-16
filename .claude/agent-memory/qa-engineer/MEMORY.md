@@ -1,0 +1,2 @@
+- [TypeScript 7 + ESLint v10 compatibility](project-typescript7-eslint10-compat.md) — typescript-eslint@8.x crashes with TS7; eslint-config-next unusable; workaround via babel parser wrapper in eslint.config.js
+- [Playwright e2e patterns and constraints](project-e2e-patterns.md) — server-side auth bypass problem, fixture rename fix, pre-existing tsc errors, selector reference

@@ -1,0 +1,5 @@
+- [Project Stack Versions](project-stack-versions.md) — Prisma 7 has 6 breaking changes from prior versions (adapter required, no directUrl, seed in config, etc.); Supabase session-mode URL required for runtime
+- [React Compiler + react-hook-form rules](feedback-react-compiler-compat.md) — useWatch instead of watch(); no setState in effects; no .default() in Zod schemas with zodResolver
+- [Users Feature Conventions](project-users-feature.md) — invite via Supabase Auth admin API, disable = ban (~100yr), never delete; admin client requires SUPABASE_SECRET_KEY
+- [Scheduling Engine Conventions](project-scheduling-engine.md) — timezone trap (use local midnight in tests), round-robin per task, skipDuplicates idempotency, only role=user eligible
+- [Reports & Audit Logs Feature](project-reports-feature.md) — Phase 5.2: PDF via @react-pdf/renderer, Excel via exceljs; Buffer→Response needs Uint8Array.from(); Prisma.ScheduleWhereInput for typed where clauses

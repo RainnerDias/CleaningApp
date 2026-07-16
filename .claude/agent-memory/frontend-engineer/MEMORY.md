@@ -1,0 +1,1 @@
+- [Project Stack](project-stack.md) — Tech stack, route groups, Supabase env key names, Prisma adapter notes for Casa Limpa
