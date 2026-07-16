@@ -315,7 +315,12 @@ export function WeekClient({
   initialWeekStart,
   initialWeekLabel,
 }: WeekClientProps) {
-  const [weekStart, setWeekStart] = useState<Date>(() => new Date(initialWeekStart))
+  const [weekStart, setWeekStart] = useState<Date>(() => {
+    // Parse only the YYYY-MM-DD portion as LOCAL midnight to avoid the UTC→local
+    // shift that would land in the previous day in UTC-3 and display the wrong week.
+    const [y, m, d] = initialWeekStart.slice(0, 10).split('-').map(Number)
+    return new Date(y, m - 1, d)
+  })
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleWithDetails | null>(null)
 
   // Determine whether the current week matches the server-fetched week so we

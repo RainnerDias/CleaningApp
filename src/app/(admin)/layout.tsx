@@ -9,6 +9,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect('/login')
   }
 
+  if (user.role !== 'admin') {
+    redirect('/today')
+  }
+
   return (
     <div className="flex min-h-screen">
       <AdminSidebar user={user} />
