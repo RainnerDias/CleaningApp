@@ -1,0 +1,2 @@
+- [Project Stack](project-stack.md) — Tech stack for Casa Limpa: Next.js 16, React 19, TypeScript 6, Prisma 7, Supabase, Vercel deployment, npm, Node 20
+- [Project CI/CD](project-cicd.md) — GitHub Actions pipeline structure, Vercel cron config, key constraints (no deploy step, e2e gated to main push)

@@ -1,0 +1,1 @@
+- [Casa Limpa project context](project-casa-limpa.md) — Stack, Prisma 7 gotchas, architecture, and list of all canonical doc files produced in the 2026-07-16 baseline session
