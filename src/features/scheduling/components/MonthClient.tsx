@@ -141,8 +141,14 @@ export function MonthClient({ initialSchedules, initialMonthStart }: MonthClient
   const calendarRef = useRef<FullCalendar>(null)
 
   // Track the visible date range for the query key
-  const defaultFrom = useMemo(() => startOfMonth(new Date(initialMonthStart)), [initialMonthStart])
-  const defaultTo = useMemo(() => endOfMonth(new Date(initialMonthStart)), [initialMonthStart])
+  const defaultFrom = useMemo(() => {
+    const [y, m] = initialMonthStart.slice(0, 10).split('-').map(Number)
+    return startOfMonth(new Date(y, m - 1, 1))
+  }, [initialMonthStart])
+  const defaultTo = useMemo(() => {
+    const [y, m] = initialMonthStart.slice(0, 10).split('-').map(Number)
+    return endOfMonth(new Date(y, m - 1, 1))
+  }, [initialMonthStart])
 
   const [range, setRange] = useState<{ from: Date; to: Date }>({
     from: defaultFrom,

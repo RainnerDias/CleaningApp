@@ -119,14 +119,11 @@ export function RoomDialog({ open, onOpenChange, room }: RoomDialogProps) {
           {/* Icon */}
           <div className="space-y-1.5">
             <Label htmlFor="room-icon">
-              Ícone *{' '}
-              <span className="text-xs font-normal text-muted-foreground">
-                (emoji ou nome lucide)
-              </span>
+              Ícone * <span className="text-xs font-normal text-muted-foreground">(emoji)</span>
             </Label>
             <Input
               id="room-icon"
-              placeholder="Ex: 🍳 ou home"
+              placeholder="Ex: 🍳 🛁 🛏️ 🚿"
               aria-invalid={!!errors.icon}
               {...register('icon')}
             />
