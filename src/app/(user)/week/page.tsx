@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
-import { startOfWeek, endOfWeek } from 'date-fns'
+import { startOfWeek, endOfWeek, format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { scheduleService } from '@/features/scheduling/services/scheduleService'
 import { WeekClient } from '@/features/scheduling/components/WeekClient'
@@ -14,15 +15,17 @@ export default async function WeekPage() {
   const sunday = endOfWeek(now, { weekStartsOn: 1 })
 
   const rawSchedules = await scheduleService.getByDateRange(monday, sunday, user.id)
-
-  // Serialise Prisma Date objects → ISO strings (Next.js requires plain JSON)
   const schedules = JSON.parse(JSON.stringify(rawSchedules)) as ScheduleWithDetails[]
+
+  // Pre-format the week label server-side to avoid timezone hydration mismatch
+  const initialWeekLabel = `${format(monday, "d 'de' MMM", { locale: ptBR })} – ${format(sunday, "d 'de' MMM", { locale: ptBR })}`
 
   return (
     <WeekClient
       user={{ id: user.id, name: user.name }}
       initialSchedules={schedules}
       initialWeekStart={monday.toISOString()}
+      initialWeekLabel={initialWeekLabel}
     />
   )
 }

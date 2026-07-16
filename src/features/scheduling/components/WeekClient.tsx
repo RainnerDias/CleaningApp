@@ -42,6 +42,8 @@ interface WeekClientProps {
   initialSchedules: ScheduleWithDetails[]
   /** ISO date string of the server-rendered week's Monday */
   initialWeekStart: string
+  /** Pre-formatted week range label from the server (avoids timezone hydration mismatch) */
+  initialWeekLabel: string
 }
 
 // ---------------------------------------------------------------------------
@@ -307,7 +309,12 @@ function DayColumn({ day, schedules, onTaskClick }: DayColumnProps) {
  * - "← / →" week navigation + "Hoje" shortcut
  * - Keeps previous week's data visible while fetching the next week
  */
-export function WeekClient({ user: _user, initialSchedules, initialWeekStart }: WeekClientProps) {
+export function WeekClient({
+  user: _user,
+  initialSchedules,
+  initialWeekStart,
+  initialWeekLabel,
+}: WeekClientProps) {
   const [weekStart, setWeekStart] = useState<Date>(() => new Date(initialWeekStart))
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleWithDetails | null>(null)
 
@@ -361,7 +368,12 @@ export function WeekClient({ user: _user, initialSchedules, initialWeekStart }: 
 
   const monday = startOfWeek(weekStart, { weekStartsOn: 1 })
   const sunday = endOfWeek(weekStart, { weekStartsOn: 1 })
-  const weekLabel = `${format(monday, "d 'de' MMM", { locale: ptBR })} – ${format(sunday, "d 'de' MMM", { locale: ptBR })}`
+  // On initial render use the server-computed label (matches SSR, avoids hydration mismatch).
+  // After navigation the client can compute it freely since hydration has already completed.
+  const isInitialRender = currentWeekMonday === initialWeekMonday
+  const weekLabel = isInitialRender
+    ? initialWeekLabel
+    : `${format(monday, "d 'de' MMM", { locale: ptBR })} – ${format(sunday, "d 'de' MMM", { locale: ptBR })}`
 
   return (
     <div className="min-h-screen bg-background pb-8">

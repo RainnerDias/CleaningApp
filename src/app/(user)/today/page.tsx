@@ -1,10 +1,27 @@
 import { redirect } from 'next/navigation'
-import { startOfDay } from 'date-fns'
+import { startOfDay, format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { scheduleService } from '@/features/scheduling/services/scheduleService'
 import { prisma } from '@/lib/prisma'
 import { TodayClient } from '@/features/scheduling/components/TodayClient'
 import type { ScheduleWithDetails } from '@/features/scheduling/types'
+
+const WEEKDAYS_PT = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'] as const
+const MONTHS_PT = [
+  'janeiro',
+  'fevereiro',
+  'março',
+  'abril',
+  'maio',
+  'junho',
+  'julho',
+  'agosto',
+  'setembro',
+  'outubro',
+  'novembro',
+  'dezembro',
+] as const
 
 export default async function TodayPage() {
   const user = await getCurrentUser()
@@ -17,17 +34,19 @@ export default async function TodayPage() {
     prisma.setting.findUnique({ where: { key: 'golden_rule' } }),
   ])
 
-  // Serialise Prisma Date objects → ISO strings so the type matches ScheduleWithDetails
-  // (Next.js serialises them at runtime, but TypeScript needs the round-trip hint here)
   const schedules = JSON.parse(JSON.stringify(rawSchedules)) as ScheduleWithDetails[]
-
   const goldenRule = (goldenRuleSetting?.value as { text: string } | null)?.text ?? ''
+
+  // Compute the date label server-side to prevent hydration mismatch from
+  // timezone differences between the UTC server and the client's local time.
+  const todayLabel = `Hoje é ${WEEKDAYS_PT[today.getDay()]}, ${format(today, "d 'de' MMMM", { locale: ptBR })}`
 
   return (
     <TodayClient
       user={{ id: user.id, name: user.name }}
       initialSchedules={schedules}
       goldenRule={goldenRule}
+      todayLabel={todayLabel}
       today={today.toISOString()}
     />
   )

@@ -30,14 +30,14 @@ const DEFAULT_VALUES: InviteUserSchema = {
   name: '',
   email: '',
   role: 'user',
+  password: '',
+  confirmPassword: '',
 }
 
-/**
- * Modal dialog for inviting a new user by email.
- * Supabase sends the invitation email; the DB record is created on acceptance.
- */
 export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) {
   const inviteUser = useInviteUser()
+  // Destructure stable references to avoid infinite loop in useEffect
+  const { reset: resetMutation } = inviteUser
 
   const {
     register,
@@ -49,20 +49,19 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
     defaultValues: DEFAULT_VALUES,
   })
 
-  /* Reset form when dialog closes */
   useEffect(() => {
     if (!open) {
       reset(DEFAULT_VALUES)
-      inviteUser.reset()
+      resetMutation()
     }
-  }, [open, reset, inviteUser])
+  }, [open, reset, resetMutation])
 
   const onSubmit = async (data: InviteUserSchema) => {
     try {
       await inviteUser.mutateAsync(data)
       onOpenChange(false)
     } catch {
-      // Error is surfaced via mutation state
+      // Error surfaced via mutation state
     }
   }
 
@@ -70,9 +69,10 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
     <DialogRoot open={open} onOpenChange={onOpenChange}>
       <DialogContent aria-describedby="invite-user-description">
         <DialogHeader>
-          <DialogTitle>Convidar Usuário</DialogTitle>
+          <DialogTitle>Criar Usuário</DialogTitle>
           <DialogDescription id="invite-user-description">
-            Preencha os dados abaixo para enviar um convite de acesso.
+            Preencha os dados e defina a senha inicial. Compartilhe as credenciais com o usuário —
+            ele poderá alterá-la no perfil após o primeiro acesso.
           </DialogDescription>
         </DialogHeader>
 
@@ -134,9 +134,40 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
             )}
           </div>
 
-          {/* Info box */}
-          <div className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-            Um email de convite será enviado para o endereço fornecido.
+          {/* Password */}
+          <div className="space-y-1.5">
+            <Label htmlFor="invite-password">Senha inicial *</Label>
+            <Input
+              id="invite-password"
+              type="password"
+              placeholder="Mínimo 8 caracteres"
+              autoComplete="new-password"
+              aria-invalid={!!errors.password}
+              {...register('password')}
+            />
+            {errors.password && (
+              <p className="text-xs text-destructive" role="alert">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
+
+          {/* Confirm password */}
+          <div className="space-y-1.5">
+            <Label htmlFor="invite-confirm-password">Confirmar senha *</Label>
+            <Input
+              id="invite-confirm-password"
+              type="password"
+              placeholder="Repita a senha"
+              autoComplete="new-password"
+              aria-invalid={!!errors.confirmPassword}
+              {...register('confirmPassword')}
+            />
+            {errors.confirmPassword && (
+              <p className="text-xs text-destructive" role="alert">
+                {errors.confirmPassword.message}
+              </p>
+            )}
           </div>
 
           {/* Mutation error */}
@@ -158,7 +189,7 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
               }
             />
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Enviando convite...' : 'Enviar convite'}
+              {isSubmitting ? 'Criando usuário...' : 'Criar usuário'}
             </Button>
           </DialogFooter>
         </form>

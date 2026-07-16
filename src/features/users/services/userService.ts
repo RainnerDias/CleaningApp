@@ -38,12 +38,14 @@ export const userService = {
   getAll: () => userRepository.findAll(),
 
   invite: async (adminId: string, input: InviteUserInput) => {
-    // 1. Invite via Supabase Auth — sends invitation email
+    // 1. Create user in Supabase Auth with a pre-set password (no invite email needed)
     const supabase = createAdminClient()
-    const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
-      input.email,
-      { data: { name: input.name, role: input.role } }
-    )
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: input.email,
+      password: input.password,
+      email_confirm: true, // skip email verification — admin already knows the user
+      user_metadata: { name: input.name, role: input.role },
+    })
     if (authError) throw new Error(authError.message)
 
     // 2. Create DB record (id must match the Supabase auth user id)

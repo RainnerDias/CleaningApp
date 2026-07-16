@@ -54,7 +54,7 @@ export function UsersPageClient({ initialUsers }: UsersPageClientProps) {
         </div>
         <Button onClick={() => setIsInviteOpen(true)}>
           <UserPlus aria-hidden="true" />
-          Convidar Usuário
+          Criar Usuário
         </Button>
       </div>
 

@@ -16,6 +16,7 @@ export interface InviteUserInput {
   name: string
   email: string
   role: Role
+  password: string
 }
 
 export interface UpdateUserInput {

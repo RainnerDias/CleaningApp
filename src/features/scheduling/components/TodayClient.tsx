@@ -107,6 +107,8 @@ interface TodayClientProps {
   initialSchedules: ScheduleWithDetails[]
   /** Text of the golden rule from admin settings */
   goldenRule: string
+  /** Pre-formatted date label computed server-side (avoids timezone hydration mismatch) */
+  todayLabel: string
   /** ISO date string representing the server's "today" reference point */
   today: string
 }
@@ -657,12 +659,16 @@ function RoomSection({ room, schedules, optimisticStatuses, onToggle, onSkip }: 
  * - Collapsible Golden Rule banner (session-persistent dismissal)
  * - Celebration banner when all tasks are done
  */
-export function TodayClient({ user, initialSchedules, goldenRule, today }: TodayClientProps) {
-  // Use the server's today reference date for consistent display with the loaded data
-  const todayDate = useMemo(() => {
-    const parsed = new Date(today)
-    return isNaN(parsed.getTime()) ? new Date() : parsed
-  }, [today])
+export function TodayClient({
+  user,
+  initialSchedules,
+  goldenRule,
+  todayLabel,
+  today,
+}: TodayClientProps) {
+  // today ISO string is used only for query key scoping (not rendered directly,
+  // which avoids the server/client timezone hydration mismatch)
+  void today
 
   const firstName = user.name.split(' ')[0] ?? user.name
 
@@ -751,7 +757,7 @@ export function TodayClient({ user, initialSchedules, goldenRule, today }: Today
       {/* ── Header ── */}
       <div className="px-4 pt-6 pb-4">
         <h1 className="text-2xl font-bold tracking-tight">Bom dia, {firstName}! ☀️</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">{formatDatePt(todayDate)}</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">{todayLabel}</p>
 
         {/* Summary row */}
         {totalCount > 0 && (

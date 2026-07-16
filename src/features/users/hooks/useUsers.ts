@@ -3,6 +3,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { AppUser, InviteUserInput, UpdateUserInput } from '../types'
 
+type CreateUserInput = InviteUserInput & { confirmPassword: string }
+
 export const USERS_QUERY_KEY = ['users'] as const
 
 async function handleResponse<T>(res: Response): Promise<T> {
@@ -26,11 +28,11 @@ export function useUsers(initialData?: AppUser[]) {
   })
 }
 
-/** Mutation: invite a new user via POST /api/users */
+/** Mutation: create a new user with an admin-set initial password via POST /api/users */
 export function useInviteUser() {
   const queryClient = useQueryClient()
 
-  return useMutation<AppUser, Error, InviteUserInput>({
+  return useMutation<AppUser, Error, CreateUserInput>({
     mutationFn: (data) =>
       fetch('/api/users', {
         method: 'POST',
