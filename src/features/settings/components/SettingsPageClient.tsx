@@ -132,7 +132,7 @@ function GoldenRuleCard({
           <div
             role="status"
             aria-live="polite"
-            className="flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2.5 text-sm font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400"
+            className="flex items-center gap-2 rounded-lg bg-brand/10 px-4 py-2.5 text-sm font-medium text-brand"
           >
             <CheckCircle2 className="size-4 shrink-0" aria-hidden="true" />
             Salvo com sucesso!

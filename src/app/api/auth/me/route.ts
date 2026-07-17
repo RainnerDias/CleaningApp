@@ -1,5 +1,7 @@
-import { getCurrentUser } from '@/features/auth/services/authService'
+﻿import { getCurrentUser } from '@/features/auth/services/authService'
 import { NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   const user = await getCurrentUser()

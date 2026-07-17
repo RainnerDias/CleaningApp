@@ -1,13 +1,15 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { startOfDay } from 'date-fns'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { scheduleService } from '@/features/scheduling/services/scheduleService'
+
+export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/schedules/today
  *
  * Returns today's schedules for the currently authenticated user.
- * No admin role required — users can only see their own schedules.
+ * No admin role required â€” users can only see their own schedules.
  */
 export async function GET() {
   const user = await getCurrentUser()

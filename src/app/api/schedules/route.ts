@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { scheduleService } from '@/features/scheduling/services/scheduleService'
 import { listSchedulesSchema } from '@/features/scheduling/validators'
+
+export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/schedules?from=YYYY-MM-DD&to=YYYY-MM-DD[&userId=uuid]

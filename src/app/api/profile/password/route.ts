@@ -1,15 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { createServerClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 const changePasswordSchema = z
   .object({
-    newPassword: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres'),
-    confirmPassword: z.string().min(1, 'A confirmação da senha é obrigatória'),
+    newPassword: z.string().min(8, 'A senha deve ter no mÃ­nimo 8 caracteres'),
+    confirmPassword: z.string().min(1, 'A confirmaÃ§Ã£o da senha Ã© obrigatÃ³ria'),
   })
   .refine((v) => v.newPassword === v.confirmPassword, {
-    message: 'As senhas não coincidem',
+    message: 'As senhas nÃ£o coincidem',
     path: ['confirmPassword'],
   })
 
@@ -17,7 +19,7 @@ const changePasswordSchema = z
  * POST /api/profile/password
  *
  * Changes the authenticated user's password via Supabase Auth.
- * Uses the user's own session — does NOT require the current password
+ * Uses the user's own session â€” does NOT require the current password
  * (Supabase handles this at the session level).
  *
  * Body: { newPassword: string, confirmPassword: string }

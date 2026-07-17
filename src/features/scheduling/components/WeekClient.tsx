@@ -53,7 +53,7 @@ interface WeekClientProps {
 function StatusIcon({ status }: { status: ScheduleWithDetails['status'] }) {
   if (status === 'completed') {
     return (
-      <span className="text-green-500 text-xs font-bold" aria-label="Concluída">
+      <span className="text-brand text-xs font-bold" aria-label="Concluída">
         ✓
       </span>
     )
@@ -66,7 +66,7 @@ function StatusIcon({ status }: { status: ScheduleWithDetails['status'] }) {
     )
   }
   return (
-    <span className="text-amber-500 text-xs font-bold" aria-label="Pendente">
+    <span className="text-warning text-xs font-bold" aria-label="Pendente">
       ·
     </span>
   )
@@ -259,13 +259,13 @@ function DayColumn({ day, schedules, onTaskClick }: DayColumnProps) {
       <div
         className={cn(
           'rounded-xl px-2 py-2 text-center shadow-sm',
-          todayHighlight ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'
+          todayHighlight ? 'bg-brand text-brand-foreground' : 'bg-card border border-border'
         )}
       >
         <p
           className={cn(
             'text-xs font-semibold',
-            todayHighlight ? 'text-primary-foreground/80' : 'text-muted-foreground'
+            todayHighlight ? 'text-brand-foreground/80' : 'text-muted-foreground'
           )}
         >
           {WEEK_DAY_ABBR[day.getDay()]}
@@ -273,7 +273,7 @@ function DayColumn({ day, schedules, onTaskClick }: DayColumnProps) {
         <p
           className={cn(
             'text-sm font-bold tabular-nums',
-            todayHighlight ? 'text-primary-foreground' : 'text-foreground'
+            todayHighlight ? 'text-brand-foreground' : 'text-foreground'
           )}
         >
           {format(day, 'd')}
@@ -299,6 +299,19 @@ function DayColumn({ day, schedules, onTaskClick }: DayColumnProps) {
       )}
     </div>
   )
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Returns the default mobile-window start index (0–4) that centers today. */
+function getDefaultMobileStart(ws: Date): number {
+  const monday = startOfWeek(ws, { weekStartsOn: 1 })
+  const sunday = endOfWeek(ws, { weekStartsOn: 1 })
+  const allDays = eachDayOfInterval({ start: monday, end: sunday })
+  const todayIndex = allDays.findIndex((d) => isToday(d))
+  return todayIndex !== -1 ? Math.min(Math.max(todayIndex - 1, 0), 4) : 0
 }
 
 // ---------------------------------------------------------------------------
@@ -329,6 +342,8 @@ export function WeekClient({
     return new Date(y, m - 1, d)
   })
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleWithDetails | null>(null)
+  // Mobile 3-day sliding window: index 0–4 (day 0 = Mon, always showing 3 days)
+  const [mobileStart, setMobileStart] = useState(() => getDefaultMobileStart(weekStart))
 
   // Determine whether the current week matches the server-fetched week so we
   // can safely inject initialData into the query without polluting other keys.
@@ -365,17 +380,23 @@ export function WeekClient({
     return map
   }, [schedules])
 
-  // Navigation handlers
+  // Navigation handlers — also reset mobile window to center today in new week
   function handlePrevWeek() {
-    setWeekStart((d) => subWeeks(d, 1))
+    const next = subWeeks(weekStart, 1)
+    setWeekStart(next)
+    setMobileStart(getDefaultMobileStart(next))
   }
 
   function handleNextWeek() {
-    setWeekStart((d) => addWeeks(d, 1))
+    const next = addWeeks(weekStart, 1)
+    setWeekStart(next)
+    setMobileStart(getDefaultMobileStart(next))
   }
 
   function handleToday() {
-    setWeekStart(new Date())
+    const next = new Date()
+    setWeekStart(next)
+    setMobileStart(getDefaultMobileStart(next))
   }
 
   const monday = startOfWeek(weekStart, { weekStartsOn: 1 })
@@ -439,14 +460,55 @@ export function WeekClient({
         )}
       </div>
 
-      {/* ── 7-column week grid ── */}
-      {/* On mobile: horizontal scroll; on desktop: natural 7-col grid */}
-      <div className="px-4 overflow-x-auto">
+      {/* ── Mobile: 3-day sliding view ── */}
+      <div className="md:hidden px-4">
+        {/* Day-slide navigation */}
+        <div className="flex items-center justify-between mb-3">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setMobileStart((s) => Math.max(s - 1, 0))}
+            disabled={mobileStart === 0}
+            aria-label="3 dias anteriores"
+          >
+            <ChevronLeft aria-hidden="true" />
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {format(days[mobileStart], 'd MMM', { locale: ptBR })} –{' '}
+            {format(days[Math.min(mobileStart + 2, 6)], 'd MMM', { locale: ptBR })}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setMobileStart((s) => Math.min(s + 1, 4))}
+            disabled={mobileStart >= 4}
+            aria-label="3 próximos dias"
+          >
+            <ChevronRight aria-hidden="true" />
+          </Button>
+        </div>
+
+        <div role="grid" aria-label="Grade de tarefas da semana" className="grid grid-cols-3 gap-2">
+          {days.slice(mobileStart, mobileStart + 3).map((day) => {
+            const dateKey = format(day, 'yyyy-MM-dd')
+            return (
+              <DayColumn
+                key={dateKey}
+                day={day}
+                schedules={schedulesByDate.get(dateKey) ?? []}
+                onTaskClick={setSelectedSchedule}
+              />
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Desktop: full 7-column grid ── */}
+      <div className="hidden md:block px-4">
         <div
           role="grid"
           aria-label="Grade de tarefas da semana"
           className="grid grid-cols-7 gap-2.5"
-          style={{ minWidth: '560px' }}
         >
           {days.map((day) => {
             const dateKey = format(day, 'yyyy-MM-dd')

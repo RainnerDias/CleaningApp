@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/features/auth/services/authService'
 import { roomService } from '@/features/rooms/services/roomService'
 import { createRoomSchema } from '@/features/rooms/validators'
 
-/** GET /api/rooms — List all rooms (admin only) */
+export const dynamic = 'force-dynamic'
+
+/** GET /api/rooms â€” List all rooms (admin only) */
 export async function GET() {
   try {
     await requireAdmin()
@@ -26,7 +28,7 @@ export async function GET() {
   }
 }
 
-/** POST /api/rooms — Create a room (admin only) */
+/** POST /api/rooms â€” Create a room (admin only) */
 export async function POST(request: NextRequest) {
   let userId: string
 

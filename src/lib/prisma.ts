@@ -11,11 +11,11 @@ import { PrismaClient } from '@prisma/client'
 // prepared statements and full SQL semantics — required by PrismaPg.
 // DATABASE_URL (transaction pooler, port 6543) is NOT compatible with PrismaPg.
 //
-// Both the Pool and the PrismaClient are kept as module-level singletons to
-// avoid creating new connections on every Next.js hot-module reload in dev.
+// In dev, both the Pool and PrismaClient are stored on globalThis to survive
+// Next.js hot-module reloads without leaking connections.
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient
-  pgPool: Pool
+  prisma: PrismaClient | undefined
+  pgPool: Pool | undefined
 }
 
 function createPool(): Pool {
@@ -26,12 +26,32 @@ function createPool(): Pool {
   return new Pool({ connectionString })
 }
 
-const pool = globalForPrisma.pgPool ?? createPool()
-const adapter = new PrismaPg(pool)
+// Module-level cache — avoids calling getInstance() on every Proxy property access
+let _client: PrismaClient | undefined
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter })
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.pgPool = pool
-  globalForPrisma.prisma = prisma
+function getInstance(): PrismaClient {
+  // Fast path: already created this module lifecycle
+  if (_client) return _client
+  // Dev hot-reload path: reuse the instance that survived the module reload
+  if (globalForPrisma.prisma) {
+    _client = globalForPrisma.prisma
+    return _client
+  }
+  const pool = globalForPrisma.pgPool ?? createPool()
+  const adapter = new PrismaPg(pool)
+  _client = new PrismaClient({ adapter })
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.pgPool = pool
+    globalForPrisma.prisma = _client
+  }
+  return _client
 }
+
+// Pool is NOT created at import time — deferred to the first DB access.
+// This lets Next.js statically import route modules at build time without
+// DATABASE_URL / SESSION_URL being present in the build environment.
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_, prop: string | symbol) {
+    return Reflect.get(getInstance(), prop)
+  },
+})

@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/features/auth/services/authService'
 import { taskService } from '@/features/tasks/services/taskService'
 import { createTaskSchema, frequencyInputSchema } from '@/features/tasks/validators'
 
-/** GET /api/tasks — List all tasks (admin only) */
+export const dynamic = 'force-dynamic'
+
+/** GET /api/tasks â€” List all tasks (admin only) */
 export async function GET() {
   try {
     await requireAdmin()
@@ -26,7 +28,7 @@ export async function GET() {
   }
 }
 
-/** POST /api/tasks — Create a task with optional embedded frequency (admin only) */
+/** POST /api/tasks â€” Create a task with optional embedded frequency (admin only) */
 export async function POST(request: NextRequest) {
   let userId: string
   try {

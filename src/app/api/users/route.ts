@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/features/auth/services/authService'
 import { userService } from '@/features/users/services/userService'
 import { inviteUserSchema } from '@/features/users/validators'
 
-/** GET /api/users — List all users (admin only) */
+export const dynamic = 'force-dynamic'
+
+/** GET /api/users â€” List all users (admin only) */
 export async function GET() {
   try {
     await requireAdmin()
@@ -26,7 +28,7 @@ export async function GET() {
   }
 }
 
-/** POST /api/users — Invite a new user via email (admin only) */
+/** POST /api/users â€” Invite a new user via email (admin only) */
 export async function POST(request: NextRequest) {
   let adminId: string
 

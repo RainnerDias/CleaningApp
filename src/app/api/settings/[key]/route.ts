@@ -1,60 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { prisma } from '@/lib/prisma'
 
-const GOLDEN_RULE_DEFAULT_TITLE = 'Regra de Ouro'
-const GOLDEN_RULE_DEFAULT_TEXT =
-  'Regra de ouro: Retire todos os objetos → limpe embaixo, atrás, em cima e os próprios objetos → recoloque tudo no lugar.'
-
-type RouteParams = { params: Promise<{ key: string }> }
+export const dynamic = 'force-dynamic'
 
 /**
- * GET /api/settings/[key]
+ * GET /api/settings?key=<key>
  *
- * Returns a setting by key. Public — no authentication required so the
- * Today page (and any unauthenticated context) can read it client-side.
- *
- * If the key is 'golden_rule' and no DB record exists yet, returns the
- * hard-coded default text so the banner is never empty on a fresh install.
+ * Returns the value of a single Setting by key.
+ * Requires authentication â€” any authenticated user may read settings.
  */
-export async function GET(_request: NextRequest, { params }: RouteParams) {
-  const { key } = await params
-
-  try {
-    const setting = await prisma.setting.findUnique({ where: { key } })
-
-    if (!setting) {
-      if (key === 'golden_rule') {
-        return NextResponse.json({
-          key,
-          value: { title: GOLDEN_RULE_DEFAULT_TITLE, text: GOLDEN_RULE_DEFAULT_TEXT },
-        })
-      }
-      return NextResponse.json(
-        { error: { code: 'NOT_FOUND', message: `Setting "${key}" not found` } },
-        { status: 404 }
-      )
-    }
-
-    return NextResponse.json({ key: setting.key, value: setting.value })
-  } catch (err) {
-    console.error(`[GET /api/settings/${key}]`, err)
-    return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch setting' } },
-      { status: 500 }
-    )
-  }
-}
-
-/**
- * PATCH /api/settings/[key]
- *
- * Updates the value of a setting by key. Requires admin authentication.
- * Upserts the record so an admin can create settings that were never seeded.
- *
- * Body: { value: string }
- */
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest) {
   const user = await getCurrentUser()
   if (!user) {
     return NextResponse.json(
@@ -62,68 +18,28 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       { status: 401 }
     )
   }
-  if (user.role !== 'admin') {
-    return NextResponse.json(
-      { error: { code: 'FORBIDDEN', message: 'Admin access required' } },
-      { status: 403 }
-    )
-  }
 
-  const { key } = await params
-
-  let body: unknown
-  try {
-    body = await request.json()
-  } catch {
+  const key = request.nextUrl.searchParams.get('key')
+  if (!key) {
     return NextResponse.json(
-      { error: { code: 'BAD_REQUEST', message: 'Invalid JSON body' } },
-      { status: 400 }
-    )
-  }
-
-  const val = (body as { value?: unknown }).value
-  if (
-    typeof val !== 'object' ||
-    val === null ||
-    typeof (val as { text?: unknown }).text !== 'string' ||
-    (val as { text: string }).text.trim().length === 0
-  ) {
-    return NextResponse.json(
-      {
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: '"value" must be an object with a non-empty "text" field',
-        },
-      },
+      { error: { code: 'VALIDATION_ERROR', message: 'Query parameter "key" is required' } },
       { status: 422 }
     )
   }
 
-  const { title, text } = val as { title?: string; text: string }
-  const savedValue = {
-    title: (title ?? '').trim() || GOLDEN_RULE_DEFAULT_TITLE,
-    text: text.trim(),
-  }
-
   try {
-    const setting = await prisma.setting.upsert({
-      where: { key },
-      update: { value: savedValue },
-      create: {
-        key,
-        value: savedValue,
-        description:
-          key === 'golden_rule'
-            ? 'Regra de ouro exibida para usuários no painel de hoje'
-            : `Setting: ${key}`,
-      },
-    })
-
+    const setting = await prisma.setting.findUnique({ where: { key } })
+    if (!setting) {
+      return NextResponse.json(
+        { error: { code: 'NOT_FOUND', message: `Setting "${key}" not found` } },
+        { status: 404 }
+      )
+    }
     return NextResponse.json({ key: setting.key, value: setting.value })
   } catch (err) {
-    console.error(`[PATCH /api/settings/${key}]`, err)
+    console.error('[GET /api/settings]', err)
     return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to update setting' } },
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch setting' } },
       { status: 500 }
     )
   }

@@ -1,9 +1,11 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/features/auth/services/authService'
 import { generateSchedules } from '@/features/scheduling/services/schedulingEngine'
 import { generateScheduleSchema } from '@/features/scheduling/validators'
 
-/** POST /api/v1/schedules/generate — Trigger schedule generation (admin only). */
+export const dynamic = 'force-dynamic'
+
+/** POST /api/v1/schedules/generate â€” Trigger schedule generation (admin only). */
 export async function POST(request: Request) {
   try {
     await requireAdmin()

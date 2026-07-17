@@ -1,84 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { requireAdmin } from '@/features/auth/services/authService'
-import { prisma } from '@/lib/prisma'
+﻿import { NextResponse } from 'next/server'
+import { startOfDay } from 'date-fns'
+import { getCurrentUser } from '@/features/auth/services/authService'
+import { scheduleService } from '@/features/scheduling/services/scheduleService'
 
-type RouteParams = { params: Promise<{ id: string }> }
-
-const reassignSchema = z.object({
-  assignedTo: z.string().uuid('assignedTo must be a valid UUID'),
-})
-
-const scheduleInclude = {
-  task: {
-    include: {
-      room: { select: { id: true, name: true, color: true, icon: true } },
-      category: { select: { id: true, name: true, color: true } },
-    },
-  },
-  user: { select: { id: true, name: true, avatarUrl: true } },
-  comments: {
-    include: { user: { select: { id: true, name: true } } },
-    orderBy: { createdAt: 'desc' as const },
-  },
-  photos: true,
-} as const
+export const dynamic = 'force-dynamic'
 
 /**
- * PUT /api/schedules/:id
+ * GET /api/schedules/today
  *
- * Reassigns a schedule entry to a different user.
- * Body: { assignedTo: string (UUID) }
- *
- * Authorization: admin only.
+ * Returns today's schedules for the currently authenticated user.
+ * No admin role required â€” users can only see their own schedules.
  */
-export async function PUT(request: NextRequest, { params }: RouteParams) {
-  try {
-    await requireAdmin()
-  } catch {
+export async function GET() {
+  const user = await getCurrentUser()
+  if (!user) {
     return NextResponse.json(
-      { error: { code: 'UNAUTHORIZED', message: 'Admin access required' } },
+      { error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
       { status: 401 }
     )
   }
 
-  const { id } = await params
-
-  let body: unknown
   try {
-    body = await request.json()
-  } catch {
-    return NextResponse.json(
-      { error: { code: 'BAD_REQUEST', message: 'Invalid JSON body' } },
-      { status: 400 }
-    )
-  }
-
-  const parsed = reassignSchema.safeParse(body)
-  if (!parsed.success) {
-    return NextResponse.json(
-      {
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid request data',
-          details: parsed.error.issues,
-        },
-      },
-      { status: 422 }
-    )
-  }
-
-  try {
-    const schedule = await prisma.schedule.update({
-      where: { id },
-      data: { assignedTo: parsed.data.assignedTo },
-      include: scheduleInclude,
-    })
-    return NextResponse.json(schedule)
+    const today = startOfDay(new Date())
+    const schedules = await scheduleService.getByDate(today, user.id)
+    return NextResponse.json(schedules)
   } catch (err) {
-    console.error(`[PUT /api/schedules/${id}]`, err)
+    console.error('[GET /api/schedules/today]', err)
     return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to reassign schedule' } },
+      { error: { code: 'INTERNAL_ERROR', message: "Failed to fetch today's schedules" } },
       { status: 500 }
     )
   }

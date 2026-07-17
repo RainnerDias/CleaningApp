@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { startOfDay, endOfDay, parseISO } from 'date-fns'
 import { requireAdmin } from '@/features/auth/services/authService'
 import { prisma } from '@/lib/prisma'
 import type { ScheduleStatus } from '@prisma/client'
+
+export const dynamic = 'force-dynamic'
 
 const VALID_STATUSES: ScheduleStatus[] = ['pending', 'completed', 'skipped']
 
@@ -16,13 +18,13 @@ const VALID_STATUSES: ScheduleStatus[] = ['pending', 'completed', 'skipped']
  *   userId     UUID (optional)
  *   status     pending | completed | skipped (optional)
  *   page       integer >= 1 (default: 1)
- *   limit      integer 1–100 (default: 25)
+ *   limit      integer 1â€“100 (default: 25)
  *
  * Returns paginated schedule data with a summary row (total, completed,
  * pending, skipped, completion rate).
  */
 export async function GET(request: NextRequest) {
-  // ── Auth ────────────────────────────────────────────────────────────────
+  // â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   try {
     await requireAdmin()
   } catch {
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // ── Parse params ────────────────────────────────────────────────────────
+  // â”€â”€ Parse params â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const { searchParams } = request.nextUrl
 
   const fromStr = searchParams.get('from')
@@ -79,7 +81,7 @@ export async function GET(request: NextRequest) {
       ? (statusParam as ScheduleStatus)
       : undefined
 
-  // ── Build where clause ──────────────────────────────────────────────────
+  // â”€â”€ Build where clause â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const where = {
     date: { gte: fromDate, lte: toDate },
     ...(userId ? { assignedTo: userId } : {}),
@@ -87,7 +89,7 @@ export async function GET(request: NextRequest) {
     ...(roomId ? { task: { roomId } } : {}),
   }
 
-  // ── Query ────────────────────────────────────────────────────────────────
+  // â”€â”€ Query â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   try {
     const [total, data, statusCounts] = await Promise.all([
       prisma.schedule.count({ where }),

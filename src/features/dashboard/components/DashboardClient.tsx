@@ -26,8 +26,9 @@ import {
 } from 'lucide-react'
 import { format, parseISO, addDays, subDays, getDay, formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
+import { cn, getInitials } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { useChartColors } from '@/hooks/useChartColors'
 import { useDashboard, useDashboardRefresh } from '../hooks/useDashboard'
 import type { DashboardData, HeatmapEntry } from '../types'
 
@@ -50,27 +51,20 @@ function getHeatmapColor(cell: HeatmapEntry): string {
   if (cell.total === 0) return 'bg-muted'
   const ratio = cell.completed / cell.total
   if (ratio === 0) return 'bg-muted'
-  if (ratio <= 0.33) return 'bg-green-200 dark:bg-green-900'
-  if (ratio <= 0.66) return 'bg-green-400 dark:bg-green-700'
-  if (ratio < 1) return 'bg-green-500 dark:bg-green-600'
-  return 'bg-green-600 dark:bg-green-500'
+  if (ratio <= 0.33) return 'bg-brand/20'
+  if (ratio <= 0.66) return 'bg-brand/45'
+  if (ratio < 1) return 'bg-brand/65'
+  return 'bg-brand'
 }
 
 /** Returns the fill color for a user bar chart based on completion rate. */
-function getUserBarColor(rate: number): string {
-  if (rate >= 80) return '#22c55e'
-  if (rate >= 50) return '#f59e0b'
-  return '#ef4444'
-}
-
-/** Generates uppercase initials (max 2) from a display name. */
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((part) => part[0] ?? '')
-    .join('')
-    .toUpperCase()
+function getUserBarColor(
+  rate: number,
+  colors: { completed: string; pending: string; destructive: string }
+): string {
+  if (rate >= 80) return colors.completed
+  if (rate >= 50) return colors.pending
+  return colors.destructive
 }
 
 // ---------------------------------------------------------------------------
@@ -299,6 +293,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
     () => false // server snapshot
   )
 
+  const chartColors = useChartColors()
   const { data, isFetching, dataUpdatedAt } = useDashboard('30d', initialData)
   const handleRefresh = useDashboardRefresh('30d')
 
@@ -356,7 +351,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
 
       {/* ── Section 1: KPI Cards ── */}
       <section aria-label="Indicadores principais">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           <KpiCard
             icon={CheckCircle2}
             label="Taxa de Conclusão"
@@ -400,23 +395,16 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
       <section aria-label="Resumo de status">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatusMiniCard
-            icon={
-              <CheckCheck
-                className="size-4 text-green-600 dark:text-green-400"
-                aria-hidden="true"
-              />
-            }
+            icon={<CheckCheck className="size-4 text-brand" aria-hidden="true" />}
             count={dashboard.completedCount}
             label="Concluídas (30 dias)"
-            colorClass="bg-green-100 dark:bg-green-900/30"
+            colorClass="bg-brand/12"
           />
           <StatusMiniCard
-            icon={
-              <Clock className="size-4 text-amber-600 dark:text-amber-400" aria-hidden="true" />
-            }
+            icon={<Clock className="size-4 text-warning" aria-hidden="true" />}
             count={dashboard.pendingCount}
             label="Pendentes hoje"
-            colorClass="bg-amber-100 dark:bg-amber-900/30"
+            colorClass="bg-warning/12"
           />
           <StatusMiniCard
             icon={<SkipForward className="size-4 text-muted-foreground" aria-hidden="true" />}
@@ -438,10 +426,10 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
         <div className="flex items-center gap-2 mt-3" aria-hidden="true">
           <span className="text-[10px] text-muted-foreground">Menos</span>
           <div className="size-3 rounded-[2px] bg-muted" />
-          <div className="size-3 rounded-[2px] bg-green-200 dark:bg-green-900" />
-          <div className="size-3 rounded-[2px] bg-green-400 dark:bg-green-700" />
-          <div className="size-3 rounded-[2px] bg-green-500 dark:bg-green-600" />
-          <div className="size-3 rounded-[2px] bg-green-600 dark:bg-green-500" />
+          <div className="size-3 rounded-[2px] bg-brand/20" />
+          <div className="size-3 rounded-[2px] bg-brand/45" />
+          <div className="size-3 rounded-[2px] bg-brand/65" />
+          <div className="size-3 rounded-[2px] bg-brand" />
           <span className="text-[10px] text-muted-foreground">Mais</span>
         </div>
       </SectionCard>
@@ -478,7 +466,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
               <Line
                 type="monotone"
                 dataKey="completed"
-                stroke="#22c55e"
+                stroke="var(--chart-completed)"
                 name="Concluídas"
                 strokeWidth={2}
                 dot={false}
@@ -487,7 +475,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
               <Line
                 type="monotone"
                 dataKey="pending"
-                stroke="#f59e0b"
+                stroke="var(--chart-pending)"
                 name="Pendentes"
                 strokeWidth={2}
                 dot={false}
@@ -496,7 +484,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
               <Line
                 type="monotone"
                 dataKey="skipped"
-                stroke="#6b7280"
+                stroke="var(--chart-skipped)"
                 name="Ignoradas"
                 strokeWidth={2}
                 dot={false}
@@ -547,8 +535,18 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
-                <Bar dataKey="completed" name="Concluídas" fill="#22c55e" radius={[0, 2, 2, 0]} />
-                <Bar dataKey="pending" name="Pendentes" fill="#f59e0b" radius={[0, 2, 2, 0]} />
+                <Bar
+                  dataKey="completed"
+                  name="Concluídas"
+                  fill="var(--chart-completed)"
+                  radius={[0, 2, 2, 0]}
+                />
+                <Bar
+                  dataKey="pending"
+                  name="Pendentes"
+                  fill="var(--chart-pending)"
+                  radius={[0, 2, 2, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -592,8 +590,18 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
-                <Bar dataKey="completed" name="Concluídas" fill="#22c55e" radius={[0, 2, 2, 0]} />
-                <Bar dataKey="pending" name="Pendentes" fill="#f59e0b" radius={[0, 2, 2, 0]} />
+                <Bar
+                  dataKey="completed"
+                  name="Concluídas"
+                  fill="var(--chart-completed)"
+                  radius={[0, 2, 2, 0]}
+                />
+                <Bar
+                  dataKey="pending"
+                  name="Pendentes"
+                  fill="var(--chart-pending)"
+                  radius={[0, 2, 2, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -633,7 +641,10 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
                 />
                 <Bar dataKey="completionRate" name="Taxa de Conclusão" radius={[2, 2, 0, 0]}>
                   {dashboard.byUser.map((entry) => (
-                    <Cell key={entry.userId} fill={getUserBarColor(entry.completionRate)} />
+                    <Cell
+                      key={entry.userId}
+                      fill={getUserBarColor(entry.completionRate, chartColors)}
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -644,13 +655,13 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           {/* Color legend */}
           <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1.5">
-              <span className="inline-block size-2.5 rounded-sm bg-[#22c55e]" />≥ 80% — Ótimo
+              <span className="inline-block size-2.5 rounded-sm bg-brand" />≥ 80% — Ótimo
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block size-2.5 rounded-sm bg-[#f59e0b]" />≥ 50% — Regular
+              <span className="inline-block size-2.5 rounded-sm bg-warning" />≥ 50% — Regular
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block size-2.5 rounded-sm bg-[#ef4444]" />
+              <span className="inline-block size-2.5 rounded-sm bg-destructive" />
               &lt; 50% — Abaixo do esperado
             </span>
           </div>
@@ -665,7 +676,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
               <li key={comment.id} className="flex items-start gap-3">
                 {/* Avatar initials */}
                 <div
-                  className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0"
+                  className="size-8 rounded-full bg-brand/10 text-brand flex items-center justify-center text-xs font-semibold shrink-0"
                   aria-hidden="true"
                 >
                   {getInitials(comment.user.name)}

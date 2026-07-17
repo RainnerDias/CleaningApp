@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format, startOfWeek, endOfWeek } from 'date-fns'
+import { toast } from 'sonner'
 import type { ScheduleWithDetails } from '../types'
 
 export const scheduleKeys = {
@@ -84,6 +85,7 @@ export function useUpdateScheduleStatus() {
       return handleResponse<ScheduleWithDetails>(res)
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: scheduleKeys.all }),
+    onError: (err) => toast.error(err.message || 'Erro ao atualizar status'),
   })
 }
 
@@ -149,7 +151,11 @@ export function useAddComment() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ comment }),
       }).then((r) => handleResponse<CommentResponse>(r)),
-    onSuccess: () => qc.invalidateQueries({ queryKey: scheduleKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: scheduleKeys.all })
+      toast.success('Comentário salvo')
+    },
+    onError: (err) => toast.error(err.message || 'Erro ao salvar comentário'),
   })
 }
 
@@ -255,7 +261,11 @@ export function useClockIn() {
       })
       await handleResponse<unknown>(res)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: scheduleKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: scheduleKeys.all })
+      toast.success('Cronômetro iniciado')
+    },
+    onError: (err) => toast.error(err.message || 'Erro ao iniciar cronômetro'),
   })
 }
 
@@ -274,7 +284,11 @@ export function useClockOut() {
       })
       await handleResponse<unknown>(res)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: scheduleKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: scheduleKeys.all })
+      toast.success('Cronômetro parado')
+    },
+    onError: (err) => toast.error(err.message || 'Erro ao parar cronômetro'),
   })
 }
 

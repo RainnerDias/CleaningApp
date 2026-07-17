@@ -6,6 +6,13 @@ import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { DataTableSkeleton } from '@/components/ui/data-table-skeleton'
 import type { ScheduleWithDetails } from '../types'
 import { useScheduleHistory } from '../hooks/useSchedules'
@@ -50,11 +57,11 @@ function statusLabel(status: string): string {
 function statusBadgeClass(status: string): string {
   switch (status) {
     case 'completed':
-      return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+      return 'bg-brand/12 text-brand'
     case 'skipped':
       return 'bg-muted text-muted-foreground'
     default:
-      return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+      return 'bg-warning/12 text-warning-foreground'
   }
 }
 
@@ -82,20 +89,14 @@ function SummaryCards({ completed, pending, skipped }: SummaryCardsProps) {
   return (
     <div className="grid grid-cols-3 gap-3" aria-label="Resumo dos resultados" role="list">
       <article role="listitem" className="rounded-xl border border-border bg-card p-3 text-center">
-        <p
-          className="text-2xl font-bold text-green-600 dark:text-green-400"
-          aria-label={`${completed} concluídas`}
-        >
+        <p className="text-2xl font-bold text-brand" aria-label={`${completed} concluídas`}>
           {completed}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">Concluídas</p>
       </article>
 
       <article role="listitem" className="rounded-xl border border-border bg-card p-3 text-center">
-        <p
-          className="text-2xl font-bold text-amber-600 dark:text-amber-400"
-          aria-label={`${pending} pendentes`}
-        >
+        <p className="text-2xl font-bold text-warning" aria-label={`${pending} pendentes`}>
           {pending}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">Pendentes</p>
@@ -247,8 +248,8 @@ export function HistoryClient({ initialSchedules }: HistoryClientProps) {
   // ── Filter UI state (pending changes, not yet applied) ──────────────────
   const [draftFrom, setDraftFrom] = useState(format(defaultFrom, 'yyyy-MM-dd'))
   const [draftTo, setDraftTo] = useState(format(today, 'yyyy-MM-dd'))
-  const [draftStatus, setDraftStatus] = useState('')
-  const [draftRoomId, setDraftRoomId] = useState('')
+  const [draftStatus, setDraftStatus] = useState('_all')
+  const [draftRoomId, setDraftRoomId] = useState('_all')
 
   // ── Applied filter state (what the query is actually using) ─────────────
   const [appliedFrom, setAppliedFrom] = useState(defaultFrom)
@@ -284,8 +285,8 @@ export function HistoryClient({ initialSchedules }: HistoryClientProps) {
     if (isNaN(from.getTime()) || isNaN(to.getTime())) return
     setAppliedFrom(from)
     setAppliedTo(to)
-    setAppliedStatus(draftStatus || undefined)
-    setAppliedRoomId(draftRoomId || undefined)
+    setAppliedStatus(draftStatus === '_all' ? undefined : draftStatus)
+    setAppliedRoomId(draftRoomId === '_all' ? undefined : draftRoomId)
     setPage(0)
   }
 
@@ -336,7 +337,7 @@ export function HistoryClient({ initialSchedules }: HistoryClientProps) {
                 type="date"
                 value={draftFrom}
                 onChange={(e) => setDraftFrom(e.target.value)}
-                className="h-8 text-xs w-36"
+                className="h-8 text-xs w-full sm:w-36"
                 aria-label="Data inicial"
               />
             </div>
@@ -350,60 +351,39 @@ export function HistoryClient({ initialSchedules }: HistoryClientProps) {
                 type="date"
                 value={draftTo}
                 onChange={(e) => setDraftTo(e.target.value)}
-                className="h-8 text-xs w-36"
+                className="h-8 text-xs w-full sm:w-36"
                 aria-label="Data final"
               />
             </div>
 
             {/* Status filter */}
-            <div className="flex items-center gap-2 min-w-0">
-              <label htmlFor="hist-status" className="sr-only">
-                Filtrar por status
-              </label>
-              <select
-                id="hist-status"
-                value={draftStatus}
-                onChange={(e) => setDraftStatus(e.target.value)}
-                className={cn(
-                  'h-8 rounded-md border border-input bg-transparent px-3 text-xs shadow-sm transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                  'disabled:cursor-not-allowed disabled:opacity-50'
-                )}
-                aria-label="Filtrar por status"
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select value={draftStatus} onValueChange={(v) => setDraftStatus(v ?? '_all')}>
+              <SelectTrigger size="sm" className="text-xs" aria-label="Filtrar por status">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">Todos os status</SelectItem>
+                <SelectItem value="completed">Concluídas</SelectItem>
+                <SelectItem value="pending">Pendentes</SelectItem>
+                <SelectItem value="skipped">Ignoradas</SelectItem>
+              </SelectContent>
+            </Select>
 
             {/* Room filter */}
             {availableRooms.length > 0 && (
-              <div className="flex items-center gap-2 min-w-0">
-                <label htmlFor="hist-room" className="sr-only">
-                  Filtrar por sala
-                </label>
-                <select
-                  id="hist-room"
-                  value={draftRoomId}
-                  onChange={(e) => setDraftRoomId(e.target.value)}
-                  className={cn(
-                    'h-8 rounded-md border border-input bg-transparent px-3 text-xs shadow-sm transition-colors',
-                    'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                    'disabled:cursor-not-allowed disabled:opacity-50'
-                  )}
-                  aria-label="Filtrar por sala"
-                >
-                  <option value="">Todas as salas</option>
+              <Select value={draftRoomId} onValueChange={(v) => setDraftRoomId(v ?? '_all')}>
+                <SelectTrigger size="sm" className="text-xs" aria-label="Filtrar por sala">
+                  <SelectValue placeholder="Sala" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">Todas as salas</SelectItem>
                   {availableRooms.map((room) => (
-                    <option key={room.id} value={room.id}>
+                    <SelectItem key={room.id} value={room.id}>
                       {room.name}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
-              </div>
+                </SelectContent>
+              </Select>
             )}
 
             {/* Apply button */}

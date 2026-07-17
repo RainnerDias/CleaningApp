@@ -1,12 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { prisma } from '@/lib/prisma'
+
+export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/settings?key=<key>
  *
  * Returns the value of a single Setting by key.
- * Requires authentication — any authenticated user may read settings.
+ * Requires authentication â€” any authenticated user may read settings.
  */
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser()

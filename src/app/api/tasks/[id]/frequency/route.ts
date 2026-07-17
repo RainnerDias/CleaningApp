@@ -1,16 +1,39 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/features/auth/services/authService'
-import { frequencyRepository } from '@/features/tasks/repositories/taskRepository'
-import { frequencyInputSchema } from '@/features/tasks/validators'
+import { taskService } from '@/features/tasks/services/taskService'
+import { createTaskSchema, frequencyInputSchema } from '@/features/tasks/validators'
 
-type RouteParams = { params: Promise<{ id: string }> }
+export const dynamic = 'force-dynamic'
 
-/** POST /api/tasks/:id/frequency — Upsert the frequency for a task (admin only) */
-export async function POST(request: NextRequest, { params }: RouteParams) {
-  const { id: taskId } = await params
-
+/** GET /api/tasks â€” List all tasks (admin only) */
+export async function GET() {
   try {
     await requireAdmin()
+  } catch {
+    return NextResponse.json(
+      { error: { code: 'UNAUTHORIZED', message: 'Admin access required' } },
+      { status: 401 }
+    )
+  }
+
+  try {
+    const tasks = await taskService.getAll()
+    return NextResponse.json(tasks)
+  } catch (err) {
+    console.error('[GET /api/tasks]', err)
+    return NextResponse.json(
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch tasks' } },
+      { status: 500 }
+    )
+  }
+}
+
+/** POST /api/tasks â€” Create a task with optional embedded frequency (admin only) */
+export async function POST(request: NextRequest) {
+  let userId: string
+  try {
+    const user = await requireAdmin()
+    userId = user.id
   } catch {
     return NextResponse.json(
       { error: { code: 'UNAUTHORIZED', message: 'Admin access required' } },
@@ -28,13 +51,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     )
   }
 
-  const parsed = frequencyInputSchema.safeParse(body)
+  // Split out the embedded frequency before validating the task schema
+  const { frequency: frequencyRaw, ...taskRaw } = body as Record<string, unknown>
+
+  const parsed = createTaskSchema.safeParse(taskRaw)
   if (!parsed.success) {
     return NextResponse.json(
       {
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid frequency data',
+          message: 'Invalid request data',
           details: parsed.error.issues,
         },
       },
@@ -42,43 +68,40 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     )
   }
 
-  try {
-    const frequency = await frequencyRepository.upsert(taskId, {
-      type: parsed.data.type,
-      daysOfWeek: parsed.data.daysOfWeek,
-      weekOfMonth: parsed.data.weekOfMonth ?? null,
-      dayOfMonth: parsed.data.dayOfMonth ?? null,
-    })
-    return NextResponse.json(frequency, { status: 201 })
-  } catch (err) {
-    console.error(`[POST /api/tasks/${taskId}/frequency]`, err)
-    return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to upsert frequency' } },
-      { status: 500 }
-    )
-  }
-}
-
-/** DELETE /api/tasks/:id/frequency — Remove the frequency from a task (admin only) */
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
-  const { id: taskId } = await params
-
-  try {
-    await requireAdmin()
-  } catch {
-    return NextResponse.json(
-      { error: { code: 'UNAUTHORIZED', message: 'Admin access required' } },
-      { status: 401 }
-    )
+  // Validate embedded frequency if provided
+  let frequencyData: ReturnType<typeof frequencyInputSchema.parse> | undefined
+  if (frequencyRaw !== undefined && frequencyRaw !== null) {
+    const freqParsed = frequencyInputSchema.safeParse(frequencyRaw)
+    if (!freqParsed.success) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid frequency data',
+            details: freqParsed.error.issues,
+          },
+        },
+        { status: 422 }
+      )
+    }
+    frequencyData = freqParsed.data
   }
 
   try {
-    await frequencyRepository.delete(taskId)
-    return new NextResponse(null, { status: 204 })
+    const task = await taskService.create(
+      userId,
+      {
+        ...parsed.data,
+        active: parsed.data.active ?? true,
+        goldenRuleApplies: parsed.data.goldenRuleApplies ?? true,
+      },
+      frequencyData
+    )
+    return NextResponse.json(task, { status: 201 })
   } catch (err) {
-    console.error(`[DELETE /api/tasks/${taskId}/frequency]`, err)
+    console.error('[POST /api/tasks]', err)
     return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to delete frequency' } },
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to create task' } },
       { status: 500 }
     )
   }

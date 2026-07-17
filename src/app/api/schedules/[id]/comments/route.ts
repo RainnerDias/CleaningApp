@@ -1,26 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
+﻿import { NextResponse } from 'next/server'
+import { startOfDay } from 'date-fns'
 import { getCurrentUser } from '@/features/auth/services/authService'
-import { prisma } from '@/lib/prisma'
+import { scheduleService } from '@/features/scheduling/services/scheduleService'
 
-type RouteParams = { params: Promise<{ id: string }> }
-
-const addCommentSchema = z.object({
-  comment: z
-    .string()
-    .min(1, 'Comment cannot be empty')
-    .max(2000, 'Comment must be at most 2000 characters'),
-})
+export const dynamic = 'force-dynamic'
 
 /**
- * POST /api/schedules/:id/comments
+ * GET /api/schedules/today
  *
- * Adds a comment to a schedule entry.
- * Body: { comment: string } — min 1 char, max 2000 chars
- *
- * Authorization: user must be assigned to this schedule (or admin).
+ * Returns today's schedules for the currently authenticated user.
+ * No admin role required â€” users can only see their own schedules.
  */
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function GET() {
   const user = await getCurrentUser()
   if (!user) {
     return NextResponse.json(
@@ -29,76 +20,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     )
   }
 
-  const { id: scheduleId } = await params
-
-  const schedule = await prisma.schedule.findUnique({
-    where: { id: scheduleId },
-    select: { assignedTo: true },
-  })
-
-  if (!schedule) {
-    return NextResponse.json(
-      { error: { code: 'NOT_FOUND', message: 'Schedule not found' } },
-      { status: 404 }
-    )
-  }
-
-  if (user.role !== 'admin' && schedule.assignedTo !== user.id) {
-    return NextResponse.json(
-      { error: { code: 'FORBIDDEN', message: 'You are not assigned to this schedule' } },
-      { status: 403 }
-    )
-  }
-
-  let body: unknown
   try {
-    body = await request.json()
-  } catch {
-    return NextResponse.json(
-      { error: { code: 'BAD_REQUEST', message: 'Invalid JSON body' } },
-      { status: 400 }
-    )
-  }
-
-  const parsed = addCommentSchema.safeParse(body)
-  if (!parsed.success) {
-    return NextResponse.json(
-      {
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid request data',
-          details: parsed.error.issues,
-        },
-      },
-      { status: 422 }
-    )
-  }
-
-  try {
-    const comment = await prisma.taskComment.create({
-      data: {
-        scheduleId,
-        userId: user.id,
-        comment: parsed.data.comment,
-      },
-      include: {
-        user: { select: { id: true, name: true } },
-      },
-    })
-
-    return NextResponse.json(
-      {
-        id: comment.id,
-        comment: comment.comment,
-        createdAt: comment.createdAt,
-        user: comment.user,
-      },
-      { status: 201 }
-    )
+    const today = startOfDay(new Date())
+    const schedules = await scheduleService.getByDate(today, user.id)
+    return NextResponse.json(schedules)
   } catch (err) {
-    console.error(`[POST /api/schedules/${scheduleId}/comments]`, err)
+    console.error('[GET /api/schedules/today]', err)
     return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to save comment' } },
+      { error: { code: 'INTERNAL_ERROR', message: "Failed to fetch today's schedules" } },
       { status: 500 }
     )
   }

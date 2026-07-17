@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { UserBottomNav } from '@/components/layout/user-bottom-nav'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Sparkles } from 'lucide-react'
+import { getInitials } from '@/lib/utils'
 
 export default async function UserLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser()
@@ -15,17 +17,17 @@ export default async function UserLayout({ children }: { children: React.ReactNo
       {/* Compact top bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between h-14 px-4 border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-2">
-          <Sparkles className="size-4 text-primary" aria-hidden="true" />
+          <div className="flex items-center justify-center size-6 rounded-md bg-brand/10 shrink-0">
+            <Sparkles className="size-3.5 text-brand" aria-hidden="true" />
+          </div>
           <span className="font-semibold text-sm tracking-tight">Casa Limpa</span>
         </div>
 
-        {/* User avatar placeholder */}
-        <div
-          className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold uppercase select-none"
-          aria-label={`Logged in as ${user.name}`}
-        >
-          {user.name.charAt(0)}
-        </div>
+        <Avatar className="size-8" aria-label={`Conectado como ${user.name}`}>
+          <AvatarFallback className="bg-brand/10 text-brand text-xs font-semibold">
+            {getInitials(user.name)}
+          </AvatarFallback>
+        </Avatar>
       </header>
 
       {/* Page content — padded bottom to clear the fixed bottom nav */}

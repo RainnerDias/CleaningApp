@@ -1,4 +1,4 @@
-import 'server-only'
+﻿import 'server-only'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { startOfDay, endOfDay, parseISO, format } from 'date-fns'
@@ -9,6 +9,8 @@ import { requireAdmin } from '@/features/auth/services/authService'
 import { prisma } from '@/lib/prisma'
 import type { ScheduleStatus } from '@prisma/client'
 import { generateReportPDF } from '@/features/reports/services/pdfGenerator'
+
+export const dynamic = 'force-dynamic'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -43,7 +45,7 @@ interface ScheduleExportRow {
 function translateStatus(status: string): string {
   switch (status) {
     case 'completed':
-      return 'Concluída'
+      return 'ConcluÃ­da'
     case 'skipped':
       return 'Ignorada'
     default:
@@ -82,16 +84,16 @@ async function generateExcel(schedules: ScheduleExportRow[]): Promise<Uint8Array
   workbook.creator = 'Casa Limpa'
   workbook.created = new Date()
 
-  const sheet = workbook.addWorksheet('Relatório de Limpeza')
+  const sheet = workbook.addWorksheet('RelatÃ³rio de Limpeza')
 
   sheet.columns = [
     { header: 'Data', key: 'date', width: 15 },
     { header: 'Tarefa', key: 'task', width: 35 },
     { header: 'Sala', key: 'room', width: 20 },
-    { header: 'Usuário', key: 'user', width: 20 },
+    { header: 'UsuÃ¡rio', key: 'user', width: 20 },
     { header: 'Status', key: 'status', width: 15 },
     { header: 'Tempo Estimado (min)', key: 'estimated', width: 22 },
-    { header: 'Concluído em', key: 'completedAt', width: 20 },
+    { header: 'ConcluÃ­do em', key: 'completedAt', width: 20 },
   ]
 
   // Style header row
@@ -114,7 +116,7 @@ async function generateExcel(schedules: ScheduleExportRow[]): Promise<Uint8Array
       estimated: s.task.estimatedMinutes,
       completedAt: s.completedAt
         ? format(new Date(s.completedAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })
-        : '—',
+        : 'â€”',
     })
   })
 
@@ -155,7 +157,7 @@ async function generateExcel(schedules: ScheduleExportRow[]): Promise<Uint8Array
  * Streams a file download containing ALL matching records (no pagination).
  */
 export async function GET(request: NextRequest) {
-  // ── Auth ────────────────────────────────────────────────────────────────
+  // â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   try {
     await requireAdmin()
   } catch {
@@ -165,7 +167,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // ── Parse params ────────────────────────────────────────────────────────
+  // â”€â”€ Parse params â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const { searchParams } = request.nextUrl
 
   const formatParam = searchParams.get('format')
@@ -218,7 +220,7 @@ export async function GET(request: NextRequest) {
     ...(roomId ? { task: { roomId } } : {}),
   }
 
-  // ── Fetch and export ─────────────────────────────────────────────────────
+  // â”€â”€ Fetch and export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   try {
     const [schedules, statusCounts] = await Promise.all([
       fetchAllForExport(where),
@@ -242,7 +244,7 @@ export async function GET(request: NextRequest) {
 
     const stats = { total, completed, pending, skipped, completionRate }
     const dateStr = format(new Date(), 'yyyy-MM-dd')
-    const filterSummary = `Período: ${format(fromDate, 'dd/MM/yyyy', { locale: ptBR })} até ${format(toDate, 'dd/MM/yyyy', { locale: ptBR })} — ${total} registro${total !== 1 ? 's' : ''}`
+    const filterSummary = `PerÃ­odo: ${format(fromDate, 'dd/MM/yyyy', { locale: ptBR })} atÃ© ${format(toDate, 'dd/MM/yyyy', { locale: ptBR })} â€” ${total} registro${total !== 1 ? 's' : ''}`
 
     if (formatParam === 'xlsx') {
       // generateExcel returns Uint8Array<ArrayBuffer>, valid BodyInit
@@ -255,7 +257,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // PDF — Uint8Array.from converts Node.js Buffer to Uint8Array<ArrayBuffer>
+    // PDF â€” Uint8Array.from converts Node.js Buffer to Uint8Array<ArrayBuffer>
     const pdfBuffer = await generateReportPDF(schedules, filterSummary, stats)
     return new Response(Uint8Array.from(pdfBuffer), {
       headers: {

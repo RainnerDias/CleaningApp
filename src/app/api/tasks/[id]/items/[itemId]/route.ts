@@ -1,39 +1,45 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { getCurrentUser } from '@/features/auth/services/authService'
-import { prisma } from '@/lib/prisma'
+﻿import { NextRequest, NextResponse } from 'next/server'
+import { requireAdmin } from '@/features/auth/services/authService'
+import { taskService } from '@/features/tasks/services/taskService'
+import { createTaskSchema, frequencyInputSchema } from '@/features/tasks/validators'
 
-const updateItemSchema = z.object({
-  title: z.string().min(1).max(255).optional(),
-  note: z.string().max(2000).nullable().optional(),
-  displayOrder: z.number().int().min(0).optional(),
-  active: z.boolean().optional(),
-})
+export const dynamic = 'force-dynamic'
 
-/**
- * PATCH /api/tasks/:id/items/:itemId
- * Updates a task item's title, note, displayOrder, or active flag.
- * Admin only.
- */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; itemId: string }> }
-) {
-  const user = await getCurrentUser()
-  if (!user) {
+/** GET /api/tasks â€” List all tasks (admin only) */
+export async function GET() {
+  try {
+    await requireAdmin()
+  } catch {
     return NextResponse.json(
-      { error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
+      { error: { code: 'UNAUTHORIZED', message: 'Admin access required' } },
       { status: 401 }
     )
   }
-  if (user.role !== 'admin') {
+
+  try {
+    const tasks = await taskService.getAll()
+    return NextResponse.json(tasks)
+  } catch (err) {
+    console.error('[GET /api/tasks]', err)
     return NextResponse.json(
-      { error: { code: 'FORBIDDEN', message: 'Admin access required' } },
-      { status: 403 }
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch tasks' } },
+      { status: 500 }
     )
   }
+}
 
-  const { itemId } = await params
+/** POST /api/tasks â€” Create a task with optional embedded frequency (admin only) */
+export async function POST(request: NextRequest) {
+  let userId: string
+  try {
+    const user = await requireAdmin()
+    userId = user.id
+  } catch {
+    return NextResponse.json(
+      { error: { code: 'UNAUTHORIZED', message: 'Admin access required' } },
+      { status: 401 }
+    )
+  }
 
   let body: unknown
   try {
@@ -45,7 +51,10 @@ export async function PATCH(
     )
   }
 
-  const parsed = updateItemSchema.safeParse(body)
+  // Split out the embedded frequency before validating the task schema
+  const { frequency: frequencyRaw, ...taskRaw } = body as Record<string, unknown>
+
+  const parsed = createTaskSchema.safeParse(taskRaw)
   if (!parsed.success) {
     return NextResponse.json(
       {
@@ -59,53 +68,41 @@ export async function PATCH(
     )
   }
 
-  try {
-    const item = await prisma.taskItem.update({
-      where: { id: itemId },
-      data: parsed.data,
-      select: { id: true, title: true, note: true, displayOrder: true, active: true },
-    })
-    return NextResponse.json(item)
-  } catch {
-    return NextResponse.json(
-      { error: { code: 'NOT_FOUND', message: 'Task item not found' } },
-      { status: 404 }
-    )
+  // Validate embedded frequency if provided
+  let frequencyData: ReturnType<typeof frequencyInputSchema.parse> | undefined
+  if (frequencyRaw !== undefined && frequencyRaw !== null) {
+    const freqParsed = frequencyInputSchema.safeParse(frequencyRaw)
+    if (!freqParsed.success) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid frequency data',
+            details: freqParsed.error.issues,
+          },
+        },
+        { status: 422 }
+      )
+    }
+    frequencyData = freqParsed.data
   }
-}
-
-/**
- * DELETE /api/tasks/:id/items/:itemId
- * Deletes a task item.
- * Admin only.
- */
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string; itemId: string }> }
-) {
-  const user = await getCurrentUser()
-  if (!user) {
-    return NextResponse.json(
-      { error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
-      { status: 401 }
-    )
-  }
-  if (user.role !== 'admin') {
-    return NextResponse.json(
-      { error: { code: 'FORBIDDEN', message: 'Admin access required' } },
-      { status: 403 }
-    )
-  }
-
-  const { itemId } = await params
 
   try {
-    await prisma.taskItem.delete({ where: { id: itemId } })
-    return new NextResponse(null, { status: 204 })
-  } catch {
+    const task = await taskService.create(
+      userId,
+      {
+        ...parsed.data,
+        active: parsed.data.active ?? true,
+        goldenRuleApplies: parsed.data.goldenRuleApplies ?? true,
+      },
+      frequencyData
+    )
+    return NextResponse.json(task, { status: 201 })
+  } catch (err) {
+    console.error('[POST /api/tasks]', err)
     return NextResponse.json(
-      { error: { code: 'NOT_FOUND', message: 'Task item not found' } },
-      { status: 404 }
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to create task' } },
+      { status: 500 }
     )
   }
 }

@@ -1,15 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/features/auth/services/authService'
 import { categoryService } from '@/features/categories/services/categoryService'
-import { updateCategorySchema } from '@/features/categories/validators'
+import { createCategorySchema } from '@/features/categories/validators'
 
-type RouteParams = { params: Promise<{ id: string }> }
+export const dynamic = 'force-dynamic'
 
-/** PUT /api/categories/:id — Update a category (admin only) */
-export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const { id } = await params
+/** GET /api/categories â€” List all categories (admin only) */
+export async function GET() {
+  try {
+    await requireAdmin()
+  } catch {
+    return NextResponse.json(
+      { error: { code: 'UNAUTHORIZED', message: 'Admin access required' } },
+      { status: 401 }
+    )
+  }
 
+  try {
+    const categories = await categoryService.getAll()
+    return NextResponse.json(categories)
+  } catch (err) {
+    console.error('[GET /api/categories]', err)
+    return NextResponse.json(
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch categories' } },
+      { status: 500 }
+    )
+  }
+}
+
+/** POST /api/categories â€” Create a category (admin only) */
+export async function POST(request: NextRequest) {
   let userId: string
+
   try {
     const user = await requireAdmin()
     userId = user.id
@@ -30,7 +52,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     )
   }
 
-  const parsed = updateCategorySchema.safeParse(body)
+  const parsed = createCategorySchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
       {
@@ -45,39 +67,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const category = await categoryService.update(userId, id, parsed.data)
-    return NextResponse.json(category)
+    const category = await categoryService.create(userId, parsed.data)
+    return NextResponse.json(category, { status: 201 })
   } catch (err) {
-    console.error(`[PUT /api/categories/${id}]`, err)
+    console.error('[POST /api/categories]', err)
     return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to update category' } },
-      { status: 500 }
-    )
-  }
-}
-
-/** DELETE /api/categories/:id — Delete a category (admin only) */
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
-  const { id } = await params
-
-  let userId: string
-  try {
-    const user = await requireAdmin()
-    userId = user.id
-  } catch {
-    return NextResponse.json(
-      { error: { code: 'UNAUTHORIZED', message: 'Admin access required' } },
-      { status: 401 }
-    )
-  }
-
-  try {
-    await categoryService.delete(userId, id)
-    return new NextResponse(null, { status: 204 })
-  } catch (err) {
-    console.error(`[DELETE /api/categories/${id}]`, err)
-    return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to delete category' } },
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to create category' } },
       { status: 500 }
     )
   }
