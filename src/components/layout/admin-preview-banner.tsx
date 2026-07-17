@@ -1,25 +1,59 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, ArrowLeft } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
-/**
- * Rendered inside the user layout whenever the logged-in user is an admin.
- * Makes it immediately obvious that the admin is previewing the user view,
- * and provides a one-click path back to the admin dashboard.
- */
-export function AdminPreviewBanner() {
+interface PreviewUser {
+  id: string
+  name: string
+}
+
+interface AdminPreviewBannerProps {
+  users: PreviewUser[]
+}
+
+export function AdminPreviewBanner({ users }: AdminPreviewBannerProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const currentViewAsId = searchParams.get('viewAs') ?? undefined
+
+  function handleUserChange(userId: string | null) {
+    if (!userId) return
+    router.push(`/today?viewAs=${userId}`)
+  }
+
   return (
     <div
       role="status"
-      aria-live="polite"
-      className="flex items-center justify-center gap-2 px-4 py-1.5 bg-info/10 border-b border-info/20 text-xs font-medium text-info"
+      className="flex flex-wrap items-center gap-2 px-4 py-1.5 bg-info/10 border-b border-info/20 text-xs font-medium text-info"
     >
       <Eye className="size-3 shrink-0" aria-hidden="true" />
-      <span>Você está no modo visualização</span>
+      <span className="shrink-0">Modo visualização</span>
+
+      <Select value={currentViewAsId} onValueChange={handleUserChange}>
+        <SelectTrigger className="h-6 text-xs w-40 border-info/30 bg-transparent text-info focus:ring-info/30">
+          <SelectValue placeholder="Selecionar usuário" />
+        </SelectTrigger>
+        <SelectContent>
+          {users.map((u) => (
+            <SelectItem key={u.id} value={u.id}>
+              {u.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
       <Link
         href="/dashboard"
-        className="ml-1 flex items-center gap-1 underline underline-offset-2 hover:opacity-70 transition-opacity"
+        className="ml-auto flex items-center gap-1 shrink-0 underline underline-offset-2 hover:opacity-70 transition-opacity"
       >
         <ArrowLeft className="size-3" aria-hidden="true" />
         Voltar para Admin

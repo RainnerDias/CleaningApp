@@ -26,14 +26,32 @@ const MONTHS_PT = [
   'dezembro',
 ] as const
 
-export default async function TodayPage() {
+void MONTHS_PT
+
+export default async function TodayPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ viewAs?: string }>
+}) {
   const user = await getCurrentUser()
   if (!user) redirect('/login')
 
   const today = startOfDay(new Date())
 
+  // Admins can preview another user's today view via ?viewAs=<userId>
+  const { viewAs } = await searchParams
+  let targetUser = { id: user.id, name: user.name }
+
+  if (user.role === 'admin' && viewAs) {
+    const found = await prisma.user.findUnique({
+      where: { id: viewAs, active: true },
+      select: { id: true, name: true },
+    })
+    if (found) targetUser = found
+  }
+
   const [rawSchedules, goldenRuleSetting] = await Promise.all([
-    scheduleService.getByDate(today, user.id),
+    scheduleService.getByDate(today, targetUser.id),
     prisma.setting.findUnique({ where: { key: 'golden_rule' } }),
   ])
 
@@ -48,7 +66,7 @@ export default async function TodayPage() {
 
   return (
     <TodayClient
-      user={{ id: user.id, name: user.name }}
+      user={targetUser}
       initialSchedules={schedules}
       goldenRule={goldenRule}
       goldenRuleTitle={goldenRuleTitle}
