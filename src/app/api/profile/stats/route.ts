@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { startOfMonth, endOfMonth, startOfDay } from 'date-fns'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { prisma } from '@/lib/prisma'
+
+export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/profile/stats
@@ -10,7 +12,7 @@ import { prisma } from '@/lib/prisma'
  *
  * Response: {
  *   completedThisMonth: number,
- *   completionRate: number   — percentage (0–100), 0 if no schedules exist
+ *   completionRate: number   â€” percentage (0â€“100), 0 if no schedules exist
  * }
  */
 export async function GET() {

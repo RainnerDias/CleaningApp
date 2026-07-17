@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import type { Task, CreateTaskPayload, UpdateTaskPayload } from '../types'
 
 export const TASKS_QUERY_KEY = ['tasks'] as const
@@ -39,7 +40,9 @@ export function useCreateTask() {
       }).then((r) => handleResponse<Task>(r)),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY })
+      toast.success('Tarefa criada')
     },
+    onError: (err) => toast.error(err.message || 'Erro ao criar tarefa'),
   })
 }
 
@@ -56,7 +59,9 @@ export function useUpdateTask() {
       }).then((r) => handleResponse<Task>(r)),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY })
+      toast.success('Tarefa atualizada')
     },
+    onError: (err) => toast.error(err.message || 'Erro ao atualizar tarefa'),
   })
 }
 
@@ -71,7 +76,9 @@ export function useDeleteTask() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY })
+      toast.success('Tarefa removida')
     },
+    onError: (err) => toast.error(err.message || 'Erro ao remover tarefa'),
   })
 }
 

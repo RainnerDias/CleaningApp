@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/features/auth/services/authService'
 import { categoryService } from '@/features/categories/services/categoryService'
 import { createCategorySchema } from '@/features/categories/validators'
 
-/** GET /api/categories — List all categories (admin only) */
+export const dynamic = 'force-dynamic'
+
+/** GET /api/categories â€” List all categories (admin only) */
 export async function GET() {
   try {
     await requireAdmin()
@@ -26,7 +28,7 @@ export async function GET() {
   }
 }
 
-/** POST /api/categories — Create a category (admin only) */
+/** POST /api/categories â€” Create a category (admin only) */
 export async function POST(request: NextRequest) {
   let userId: string
 

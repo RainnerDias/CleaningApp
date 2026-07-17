@@ -13,18 +13,19 @@ import {
   LogOut,
   Sparkles,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, getInitials } from '@/lib/utils'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { createClient } from '@/lib/supabase/client'
 import type { AuthUser } from '@/features/auth/types'
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/calendar', label: 'Calendar', icon: Calendar },
-  { href: '/users', label: 'Users', icon: Users },
-  { href: '/tasks', label: 'Tasks', icon: ClipboardList },
-  { href: '/rooms', label: 'Rooms', icon: Home },
-  { href: '/reports', label: 'Reports', icon: BarChart2 },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
+  { href: '/calendar', label: 'Calendário', icon: Calendar },
+  { href: '/users', label: 'Usuários', icon: Users },
+  { href: '/tasks', label: 'Tarefas', icon: ClipboardList },
+  { href: '/rooms', label: 'Cômodos', icon: Home },
+  { href: '/reports', label: 'Relatórios', icon: BarChart2 },
+  { href: '/settings', label: 'Configurações', icon: Settings },
 ] as const
 
 interface AdminSidebarProps {
@@ -52,8 +53,8 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
       <aside className="hidden md:flex flex-col w-64 min-h-screen border-r border-border bg-sidebar shrink-0">
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 h-16 border-b border-border shrink-0">
-          <div className="flex items-center justify-center size-8 rounded-lg bg-primary/10 shrink-0">
-            <Sparkles className="size-4 text-primary" aria-hidden="true" />
+          <div className="flex items-center justify-center size-8 rounded-lg bg-brand/10 shrink-0">
+            <Sparkles className="size-4 text-brand" aria-hidden="true" />
           </div>
           <span className="font-bold text-base tracking-tight">Casa Limpa</span>
         </div>
@@ -70,7 +71,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-primary/10 text-primary font-semibold'
+                    ? 'bg-brand/10 text-brand font-semibold'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
@@ -84,9 +85,11 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
         {/* User + Logout */}
         <div className="border-t border-border px-3 py-4 space-y-1">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold uppercase shrink-0 select-none">
-              {user.name.charAt(0)}
-            </div>
+            <Avatar className="size-8 shrink-0">
+              <AvatarFallback className="bg-brand/10 text-brand text-xs font-semibold">
+                {getInitials(user.name)}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user.name}</p>
               <p className="text-xs text-muted-foreground truncate">{user.email}</p>
@@ -108,9 +111,9 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
       {/* ── Mobile bottom navigation ───────────────────────────────────── */}
       <nav
         aria-label="Admin navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-background/95 backdrop-blur-sm h-16 px-1"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-background/95 backdrop-blur-sm h-14 px-0"
       >
-        {NAV_ITEMS.slice(0, 6).map(({ href, label, icon: Icon }) => {
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href || pathname.startsWith(`${href}/`)
           return (
             <Link
@@ -119,19 +122,19 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
               aria-current={isActive ? 'page' : undefined}
               aria-label={label}
               className={cn(
-                'flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-[10px] font-medium transition-colors',
-                isActive ? 'text-primary' : 'text-muted-foreground'
+                'flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-[9px] font-medium transition-colors',
+                isActive ? 'text-brand' : 'text-muted-foreground'
               )}
             >
               <div
                 className={cn(
-                  'flex items-center justify-center rounded-full px-3 py-0.5 transition-colors',
-                  isActive ? 'bg-primary/10' : 'bg-transparent'
+                  'flex items-center justify-center rounded-full px-2 py-0.5 transition-colors',
+                  isActive ? 'bg-brand/10' : 'bg-transparent'
                 )}
               >
-                <Icon className="size-5" aria-hidden="true" />
+                <Icon className="size-4" aria-hidden="true" />
               </div>
-              <span>{label}</span>
+              <span className="leading-none">{label}</span>
             </Link>
           )
         })}

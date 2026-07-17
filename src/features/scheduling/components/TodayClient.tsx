@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useSyncExternalStore } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import {
@@ -18,6 +18,7 @@ import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 import type { ScheduleWithDetails, TaskItemWithCompletion } from '../types'
 import {
   useTodaySchedules,
@@ -77,11 +78,22 @@ function groupByRoom(schedules: ScheduleWithDetails[]): RoomGroup[] {
 function getPriorityDotClass(priority: string): string {
   switch (priority) {
     case 'high':
-      return 'bg-red-500'
+      return 'bg-destructive'
     case 'medium':
-      return 'bg-amber-400'
+      return 'bg-warning'
     default:
-      return 'bg-gray-300 dark:bg-gray-600'
+      return 'bg-muted-foreground/30'
+  }
+}
+
+function getPriorityBorderClass(priority: string): string {
+  switch (priority) {
+    case 'high':
+      return 'border-l-destructive'
+    case 'medium':
+      return 'border-l-warning'
+    default:
+      return 'border-l-border'
   }
 }
 
@@ -107,6 +119,87 @@ const checkmarkVariants: Variants = {
     opacity: 1,
     transition: { duration: 0.3, ease: 'easeOut' },
   },
+}
+
+// ---------------------------------------------------------------------------
+// ProgressRing — signature element
+// ---------------------------------------------------------------------------
+
+function ProgressRing({ percent, size = 76 }: { percent: number; size?: number }) {
+  const strokeWidth = 5
+  const radius = (size - strokeWidth * 2) / 2
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (percent / 100) * circumference
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      aria-hidden="true"
+      className="shrink-0"
+    >
+      {/* Track */}
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        className="text-muted"
+      />
+      {/* Progress arc */}
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="oklch(0.52 0.14 145)"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
+      />
+      {/* Percentage label */}
+      <text
+        x={size / 2}
+        y={size / 2 + 1}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize="13"
+        fontWeight="600"
+        fill="currentColor"
+        className="text-foreground"
+      >
+        {percent}%
+      </text>
+    </svg>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Time-of-day helpers
+// ---------------------------------------------------------------------------
+
+function getGreeting(hour: number): string {
+  if (hour < 12) return 'Bom dia'
+  if (hour < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
+
+function getTimeEmoji(hour: number): string {
+  if (hour < 12) return '☀️'
+  if (hour < 18) return '🌤️'
+  return '🌙'
+}
+
+function getHeroTintClass(hour: number): string {
+  if (hour < 12) return 'bg-amber-50/50 dark:bg-amber-900/10'
+  if (hour < 18) return 'bg-sky-50/50 dark:bg-sky-900/10'
+  return 'bg-indigo-50/40 dark:bg-indigo-900/10'
 }
 
 // ---------------------------------------------------------------------------
@@ -148,21 +241,14 @@ function GoldenRuleBanner({ title, text }: GoldenRuleBannerProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
       role="note"
-      aria-label="Regra de Ouro"
-      className="mx-4 mb-4 rounded-xl border-l-4 border-amber-400 border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/40 dark:bg-amber-900/20"
+      aria-label={title}
+      className="mx-4 mb-4 rounded-xl border border-warning/30 border-l-4 border-l-warning bg-warning/8 p-4"
     >
       <div className="flex items-start gap-2 min-w-0">
-        <Pin
-          className="mt-0.5 size-4 shrink-0 rotate-45 text-amber-600 dark:text-amber-400"
-          aria-hidden="true"
-        />
+        <Pin className="mt-0.5 size-4 shrink-0 rotate-45 text-warning" aria-hidden="true" />
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
-            {title}
-          </p>
-          <p className="mt-0.5 text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
-            {text}
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-warning">{title}</p>
+          <p className="mt-0.5 text-sm text-warning-foreground/80 leading-relaxed">{text}</p>
         </div>
       </div>
     </motion.div>
@@ -327,11 +413,12 @@ function TaskCard({ schedule, effectiveStatus, onToggle, onSkip }: TaskCardProps
     <motion.div
       layout
       initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: isCompleted ? 0.6 : 1, y: 0 }}
+      animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        'mb-3 rounded-xl border border-border bg-card p-4 shadow-sm',
-        isCompleted && 'bg-muted/30'
+        'mb-3 rounded-xl border border-border bg-card p-4 shadow-sm border-l-4',
+        getPriorityBorderClass(task.priority),
+        isCompleted && 'bg-muted/30 opacity-70'
       )}
     >
       {/* ── Header row ── */}
@@ -437,10 +524,15 @@ function TaskCard({ schedule, effectiveStatus, onToggle, onSkip }: TaskCardProps
       {/* ── Checklist ── */}
       {hasChecklist && (
         <div className="mt-3 pl-9">
-          <p className="text-xs text-muted-foreground mb-2">
-            {completedItemCount} de {checklist.length}{' '}
-            {checklist.length === 1 ? 'concluída' : 'concluídas'}
-          </p>
+          <div className="flex items-center gap-2 mb-2">
+            <Progress
+              value={(completedItemCount / checklist.length) * 100}
+              className="h-1.5 flex-1"
+            />
+            <p className="text-xs text-muted-foreground shrink-0">
+              {completedItemCount}/{checklist.length}
+            </p>
+          </div>
           <ul className="space-y-1.5" aria-label={`Subtarefas de ${task.title}`}>
             {checklist.map((item) => {
               const isDone = item.completedAt !== null
@@ -751,12 +843,12 @@ function TaskCard({ schedule, effectiveStatus, onToggle, onSkip }: TaskCardProps
             disabled={clockOut.isPending}
             aria-busy={clockOut.isPending}
             aria-label={`Parar cronômetro para "${task.title}"`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-primary bg-primary/5 px-3 py-1.5 text-xs text-primary hover:bg-primary/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-brand bg-brand/8 px-3 py-1.5 text-xs text-brand hover:bg-brand/15 transition-colors"
           >
             {clockOut.isPending ? (
               <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
             ) : (
-              <Timer className="size-3.5 text-primary" aria-hidden="true" />
+              <Timer className="size-3.5 text-brand" aria-hidden="true" />
             )}
             Parar
           </button>
@@ -803,16 +895,16 @@ function RoomSection({ room, schedules, optimisticStatuses, onToggle, onSkip }: 
     <section aria-label={`Tarefas — ${room.name}`} className="mb-6">
       {/* Room header */}
       <div className="mb-3 flex items-center gap-2 px-1">
+        <span className="text-lg leading-none" aria-hidden="true">
+          {room.icon}
+        </span>
+        <h2 className="text-sm font-semibold text-foreground">{room.name}</h2>
         <span
-          className="size-3 rounded-full shrink-0"
+          className="h-1.5 w-1.5 rounded-full shrink-0"
           style={{ backgroundColor: room.color }}
           aria-hidden="true"
         />
-        <span className="text-base leading-none" aria-hidden="true">
-          {room.icon}
-        </span>
-        <h2 className="text-sm font-semibold tracking-wide text-foreground">{room.name}</h2>
-        <span className="ml-auto text-xs text-muted-foreground">
+        <span className="ml-auto text-xs text-muted-foreground tabular-nums">
           {schedules.length} {schedules.length === 1 ? 'tarefa' : 'tarefas'}
         </span>
       </div>
@@ -863,6 +955,13 @@ export function TodayClient({
   void today
 
   const firstName = user.name.split(' ')[0] ?? user.name
+
+  // ── Time-of-day — read on client only to avoid hydration mismatch ────────
+  const hour = useSyncExternalStore(
+    () => () => {},
+    () => new Date().getHours(),
+    () => 10
+  )
 
   // ── Data fetching ────────────────────────────────────────────────────────
   const { data: schedules = initialSchedules } = useTodaySchedules(initialSchedules)
@@ -935,51 +1034,45 @@ export function TodayClient({
   return (
     <div className="min-h-screen bg-background pb-8">
       {/* ── Header card ── */}
-      <div className="mx-4 mt-6 mb-4 rounded-xl border border-border bg-card p-4 shadow-sm">
-        <h1 className="text-2xl font-bold tracking-tight">Bom dia, {firstName}! ☀️</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">{todayLabel}</p>
-
-        {/* Summary row */}
-        {totalCount > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2" aria-label="Resumo de tarefas">
-            <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-medium">
-              {totalCount} {totalCount === 1 ? 'tarefa' : 'tarefas'} hoje
-            </span>
-            <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-              {completedCount} {completedCount === 1 ? 'concluída' : 'concluídas'}
-            </span>
-            <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-              {pendingCount} {pendingCount === 1 ? 'pendente' : 'pendentes'}
-            </span>
-          </div>
+      <div
+        className={cn(
+          'mx-4 mt-6 mb-4 rounded-xl border border-border bg-card p-4 shadow-sm transition-colors duration-500',
+          getHeroTintClass(hour)
         )}
+      >
+        <div className="flex items-start justify-between gap-3">
+          {/* Greeting + date */}
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight" suppressHydrationWarning>
+              {getGreeting(hour)}, {firstName}! {getTimeEmoji(hour)}
+            </h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">{todayLabel}</p>
 
-        {/* Progress bar */}
-        {totalCount > 0 && (
-          <div className="mt-4 flex items-center gap-3">
-            <div
-              role="progressbar"
-              aria-valuenow={progressPercent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`Progresso: ${progressPercent}%`}
-              className="relative h-2 flex-1 overflow-hidden rounded-full bg-muted"
-            >
-              <motion.div
-                className={cn(
-                  'h-full rounded-full',
-                  progressPercent === 100 ? 'bg-green-500' : 'bg-primary'
+            {/* Summary pills */}
+            {totalCount > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Resumo de tarefas">
+                <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
+                  {totalCount} {totalCount === 1 ? 'tarefa' : 'tarefas'}
+                </span>
+                <span className="inline-flex items-center rounded-full bg-brand/12 px-2.5 py-0.5 text-xs font-medium text-brand">
+                  {completedCount} {completedCount === 1 ? 'concluída' : 'concluídas'}
+                </span>
+                {pendingCount > 0 && (
+                  <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                    {pendingCount} {pendingCount === 1 ? 'pendente' : 'pendentes'}
+                  </span>
                 )}
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPercent}%` }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-              />
-            </div>
-            <span className="w-10 shrink-0 text-right text-sm font-medium tabular-nums text-muted-foreground">
-              {progressPercent}%
-            </span>
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Circular progress ring */}
+          {totalCount > 0 && (
+            <div className="shrink-0" aria-label={`Progresso: ${progressPercent}%`}>
+              <ProgressRing percent={progressPercent} />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Celebration banner ── */}
@@ -993,9 +1086,9 @@ export function TodayClient({
             transition={{ duration: 0.3 }}
             role="status"
             aria-live="polite"
-            className="mx-4 mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 dark:border-green-800/40 dark:bg-green-900/20"
+            className="mx-4 mb-4 rounded-xl border border-brand/30 bg-brand/8 px-4 py-3"
           >
-            <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+            <p className="text-sm font-semibold text-brand">
               🎉 Todas as tarefas concluídas! Ótimo trabalho!
             </p>
           </motion.div>

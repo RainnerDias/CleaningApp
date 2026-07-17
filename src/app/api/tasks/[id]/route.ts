@@ -1,14 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/features/auth/services/authService'
 import { taskService } from '@/features/tasks/services/taskService'
-import { updateTaskSchema, frequencyInputSchema } from '@/features/tasks/validators'
+import { createTaskSchema, frequencyInputSchema } from '@/features/tasks/validators'
 
-type RouteParams = { params: Promise<{ id: string }> }
+export const dynamic = 'force-dynamic'
 
-/** GET /api/tasks/:id — Fetch a single task (admin only) */
-export async function GET(_request: NextRequest, { params }: RouteParams) {
-  const { id } = await params
-
+/** GET /api/tasks â€” List all tasks (admin only) */
+export async function GET() {
   try {
     await requireAdmin()
   } catch {
@@ -19,27 +17,19 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const task = await taskService.getById(id)
-    if (!task) {
-      return NextResponse.json(
-        { error: { code: 'NOT_FOUND', message: 'Task not found' } },
-        { status: 404 }
-      )
-    }
-    return NextResponse.json(task)
+    const tasks = await taskService.getAll()
+    return NextResponse.json(tasks)
   } catch (err) {
-    console.error(`[GET /api/tasks/${id}]`, err)
+    console.error('[GET /api/tasks]', err)
     return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch task' } },
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch tasks' } },
       { status: 500 }
     )
   }
 }
 
-/** PUT /api/tasks/:id — Update a task with optional embedded frequency (admin only) */
-export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const { id } = await params
-
+/** POST /api/tasks â€” Create a task with optional embedded frequency (admin only) */
+export async function POST(request: NextRequest) {
   let userId: string
   try {
     const user = await requireAdmin()
@@ -64,7 +54,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   // Split out the embedded frequency before validating the task schema
   const { frequency: frequencyRaw, ...taskRaw } = body as Record<string, unknown>
 
-  const parsed = updateTaskSchema.safeParse(taskRaw)
+  const parsed = createTaskSchema.safeParse(taskRaw)
   if (!parsed.success) {
     return NextResponse.json(
       {
@@ -98,39 +88,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const task = await taskService.update(userId, id, parsed.data, frequencyData)
-    return NextResponse.json(task)
-  } catch (err) {
-    console.error(`[PUT /api/tasks/${id}]`, err)
-    return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to update task' } },
-      { status: 500 }
+    const task = await taskService.create(
+      userId,
+      {
+        ...parsed.data,
+        active: parsed.data.active ?? true,
+        goldenRuleApplies: parsed.data.goldenRuleApplies ?? true,
+      },
+      frequencyData
     )
-  }
-}
-
-/** DELETE /api/tasks/:id — Delete a task (admin only) */
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
-  const { id } = await params
-
-  let userId: string
-  try {
-    const user = await requireAdmin()
-    userId = user.id
-  } catch {
-    return NextResponse.json(
-      { error: { code: 'UNAUTHORIZED', message: 'Admin access required' } },
-      { status: 401 }
-    )
-  }
-
-  try {
-    await taskService.delete(userId, id)
-    return new NextResponse(null, { status: 204 })
+    return NextResponse.json(task, { status: 201 })
   } catch (err) {
-    console.error(`[DELETE /api/tasks/${id}]`, err)
+    console.error('[POST /api/tasks]', err)
     return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to delete task' } },
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to create task' } },
       { status: 500 }
     )
   }

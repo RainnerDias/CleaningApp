@@ -1,17 +1,22 @@
 import type { Metadata } from 'next'
 import { QueryProvider } from '@/providers/query-provider'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'CleaningApp',
-  description: 'Cleaning service management application',
+  title: 'Casa Limpa',
+  description: 'Gestão de limpeza doméstica',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <body>
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <TooltipProvider>{children}</TooltipProvider>
+        </QueryProvider>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   )

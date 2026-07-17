@@ -1,18 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
+import { startOfDay } from 'date-fns'
 import { getCurrentUser } from '@/features/auth/services/authService'
-import { prisma } from '@/lib/prisma'
-import { deletePhoto } from '@/lib/supabase/storage'
+import { scheduleService } from '@/features/scheduling/services/scheduleService'
 
-type RouteParams = { params: Promise<{ id: string; photoId: string }> }
+export const dynamic = 'force-dynamic'
 
 /**
- * DELETE /api/schedules/:id/photos/:photoId
+ * GET /api/schedules/today
  *
- * Deletes a photo from Supabase Storage and removes the TaskPhoto record.
- *
- * Authorization: user must own the photo (or be an admin).
+ * Returns today's schedules for the currently authenticated user.
+ * No admin role required â€” users can only see their own schedules.
  */
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+export async function GET() {
   const user = await getCurrentUser()
   if (!user) {
     return NextResponse.json(
@@ -21,43 +20,14 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     )
   }
 
-  const { id: scheduleId, photoId } = await params
-
-  const photo = await prisma.taskPhoto.findUnique({
-    where: { id: photoId },
-    select: { id: true, userId: true, scheduleId: true, storagePath: true },
-  })
-
-  if (!photo) {
-    return NextResponse.json(
-      { error: { code: 'NOT_FOUND', message: 'Photo not found' } },
-      { status: 404 }
-    )
-  }
-
-  // Ensure the photo belongs to the specified schedule
-  if (photo.scheduleId !== scheduleId) {
-    return NextResponse.json(
-      { error: { code: 'NOT_FOUND', message: 'Photo not found' } },
-      { status: 404 }
-    )
-  }
-
-  if (user.role !== 'admin' && photo.userId !== user.id) {
-    return NextResponse.json(
-      { error: { code: 'FORBIDDEN', message: 'You do not own this photo' } },
-      { status: 403 }
-    )
-  }
-
   try {
-    await deletePhoto(photo.storagePath)
-    await prisma.taskPhoto.delete({ where: { id: photoId } })
-    return new NextResponse(null, { status: 204 })
+    const today = startOfDay(new Date())
+    const schedules = await scheduleService.getByDate(today, user.id)
+    return NextResponse.json(schedules)
   } catch (err) {
-    console.error(`[DELETE /api/schedules/${scheduleId}/photos/${photoId}]`, err)
+    console.error('[GET /api/schedules/today]', err)
     return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to delete photo' } },
+      { error: { code: 'INTERNAL_ERROR', message: "Failed to fetch today's schedules" } },
       { status: 500 }
     )
   }

@@ -1,15 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/features/auth/services/authService'
 import { roomService } from '@/features/rooms/services/roomService'
-import { updateRoomSchema } from '@/features/rooms/validators'
+import { createRoomSchema } from '@/features/rooms/validators'
 
-type RouteParams = { params: Promise<{ id: string }> }
+export const dynamic = 'force-dynamic'
 
-/** PUT /api/rooms/:id — Update a room (admin only) */
-export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const { id } = await params
+/** GET /api/rooms â€” List all rooms (admin only) */
+export async function GET() {
+  try {
+    await requireAdmin()
+  } catch {
+    return NextResponse.json(
+      { error: { code: 'UNAUTHORIZED', message: 'Admin access required' } },
+      { status: 401 }
+    )
+  }
 
+  try {
+    const rooms = await roomService.getAll()
+    return NextResponse.json(rooms)
+  } catch (err) {
+    console.error('[GET /api/rooms]', err)
+    return NextResponse.json(
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch rooms' } },
+      { status: 500 }
+    )
+  }
+}
+
+/** POST /api/rooms â€” Create a room (admin only) */
+export async function POST(request: NextRequest) {
   let userId: string
+
   try {
     const user = await requireAdmin()
     userId = user.id
@@ -30,7 +52,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     )
   }
 
-  const parsed = updateRoomSchema.safeParse(body)
+  const parsed = createRoomSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
       {
@@ -45,39 +67,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const room = await roomService.update(userId, id, parsed.data)
-    return NextResponse.json(room)
+    const room = await roomService.create(userId, parsed.data)
+    return NextResponse.json(room, { status: 201 })
   } catch (err) {
-    console.error(`[PUT /api/rooms/${id}]`, err)
+    console.error('[POST /api/rooms]', err)
     return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to update room' } },
-      { status: 500 }
-    )
-  }
-}
-
-/** DELETE /api/rooms/:id — Delete a room (admin only) */
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
-  const { id } = await params
-
-  let userId: string
-  try {
-    const user = await requireAdmin()
-    userId = user.id
-  } catch {
-    return NextResponse.json(
-      { error: { code: 'UNAUTHORIZED', message: 'Admin access required' } },
-      { status: 401 }
-    )
-  }
-
-  try {
-    await roomService.delete(userId, id)
-    return new NextResponse(null, { status: 204 })
-  } catch (err) {
-    console.error(`[DELETE /api/rooms/${id}]`, err)
-    return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: 'Failed to delete room' } },
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to create room' } },
       { status: 500 }
     )
   }

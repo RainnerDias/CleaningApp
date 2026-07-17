@@ -1,11 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { prisma } from '@/lib/prisma'
 import { createServerClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 const updateProfileSchema = z.object({
-  name: z.string().trim().min(1, 'O nome não pode estar vazio').max(255),
+  name: z.string().trim().min(1, 'O nome nÃ£o pode estar vazio').max(255),
 })
 
 /**
@@ -81,7 +83,7 @@ export async function PUT(request: NextRequest) {
       data: { name },
     })
 
-    // Update Supabase Auth metadata (best-effort — failure does not block the response)
+    // Update Supabase Auth metadata (best-effort â€” failure does not block the response)
     try {
       const supabase = await createServerClient()
       await supabase.auth.updateUser({ data: { name } })

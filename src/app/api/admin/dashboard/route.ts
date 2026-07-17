@@ -1,6 +1,8 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/features/auth/services/authService'
 import { getDashboardData } from '@/features/dashboard/services/dashboardService'
+
+export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/admin/dashboard?period=30d|12m

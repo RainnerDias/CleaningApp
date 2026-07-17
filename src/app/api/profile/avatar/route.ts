@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { prisma } from '@/lib/prisma'
 import { createAdminClient } from '@/lib/supabase/admin'
+
+export const dynamic = 'force-dynamic'
 
 const AVATAR_BUCKET = 'avatars'
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // Derive extension from MIME type (image/jpeg → jpg, image/png → png, etc.)
+  // Derive extension from MIME type (image/jpeg â†’ jpg, image/png â†’ png, etc.)
   const ext = file.type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg'
   const storagePath = `${user.id}/avatar.${ext}`
 

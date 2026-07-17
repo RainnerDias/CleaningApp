@@ -1,15 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/features/auth/services/authService'
 import { userService } from '@/features/users/services/userService'
-import { updateUserSchema } from '@/features/users/validators'
+import { inviteUserSchema } from '@/features/users/validators'
 
-type RouteParams = { params: Promise<{ id: string }> }
+export const dynamic = 'force-dynamic'
 
-/** PUT /api/users/:id — Update a user's name, role, or active status (admin only) */
-export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const { id } = await params
+/** GET /api/users â€” List all users (admin only) */
+export async function GET() {
+  try {
+    await requireAdmin()
+  } catch {
+    return NextResponse.json(
+      { error: { code: 'UNAUTHORIZED', message: 'Admin access required' } },
+      { status: 401 }
+    )
+  }
 
+  try {
+    const users = await userService.getAll()
+    return NextResponse.json(users)
+  } catch (err) {
+    console.error('[GET /api/users]', err)
+    return NextResponse.json(
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch users' } },
+      { status: 500 }
+    )
+  }
+}
+
+/** POST /api/users â€” Invite a new user via email (admin only) */
+export async function POST(request: NextRequest) {
   let adminId: string
+
   try {
     const admin = await requireAdmin()
     adminId = admin.id
@@ -30,7 +52,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     )
   }
 
-  const parsed = updateUserSchema.safeParse(body)
+  const parsed = inviteUserSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
       {
@@ -45,11 +67,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const user = await userService.update(adminId, id, parsed.data)
-    return NextResponse.json(user)
+    const user = await userService.invite(adminId, parsed.data)
+    return NextResponse.json(user, { status: 201 })
   } catch (err) {
-    console.error(`[PUT /api/users/${id}]`, err)
-    const message = err instanceof Error ? err.message : 'Failed to update user'
+    console.error('[POST /api/users]', err)
+    const message = err instanceof Error ? err.message : 'Failed to invite user'
     return NextResponse.json({ error: { code: 'INTERNAL_ERROR', message } }, { status: 500 })
   }
 }
