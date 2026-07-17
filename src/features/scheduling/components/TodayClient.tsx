@@ -219,6 +219,8 @@ interface TodayClientProps {
   todayLabel: string
   /** ISO date string representing the server's "today" reference point */
   today: string
+  /** When the admin is previewing another user's view, the target user ID */
+  viewAsUserId?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -951,6 +953,7 @@ export function TodayClient({
   goldenRuleTitle,
   todayLabel,
   today,
+  viewAsUserId,
 }: TodayClientProps) {
   // today ISO string is used only for query key scoping (not rendered directly,
   // which avoids the server/client timezone hydration mismatch)
@@ -966,7 +969,7 @@ export function TodayClient({
   )
 
   // ── Data fetching ────────────────────────────────────────────────────────
-  const { data: schedules = initialSchedules } = useTodaySchedules(initialSchedules)
+  const { data: schedules = initialSchedules } = useTodaySchedules(initialSchedules, viewAsUserId)
 
   // ── Optimistic status state ──────────────────────────────────────────────
   const [optimisticStatuses, setOptimisticStatuses] = useState<Record<string, ScheduleStatus>>({})

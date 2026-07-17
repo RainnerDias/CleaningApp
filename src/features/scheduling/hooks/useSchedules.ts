@@ -125,12 +125,16 @@ type PhotoResponse = { id: string; imageUrl: string }
  * Fetches today's schedules for the authenticated user.
  * Uses server-fetched data as the initial value to avoid a loading flash.
  * Auto-refreshes every 60 seconds so status changes from other sessions appear.
+ * Admins can pass viewAsUserId to preview another user's schedules.
  */
-export function useTodaySchedules(initialData: ScheduleWithDetails[]) {
+export function useTodaySchedules(initialData: ScheduleWithDetails[], viewAsUserId?: string) {
+  const today = format(new Date(), 'yyyy-MM-dd')
+  const url = viewAsUserId
+    ? `/api/schedules/today?userId=${encodeURIComponent(viewAsUserId)}`
+    : '/api/schedules/today'
   return useQuery<ScheduleWithDetails[]>({
-    queryKey: scheduleKeys.byDate(format(new Date(), 'yyyy-MM-dd')),
-    queryFn: () =>
-      fetch('/api/schedules/today').then((r) => handleResponse<ScheduleWithDetails[]>(r)),
+    queryKey: [...scheduleKeys.byDate(today), viewAsUserId ?? 'self'],
+    queryFn: () => fetch(url).then((r) => handleResponse<ScheduleWithDetails[]>(r)),
     initialData,
     initialDataUpdatedAt: 0, // treat server data as immediately stale → refetch in background
     staleTime: 30_000, // 30 s — today's data changes frequently

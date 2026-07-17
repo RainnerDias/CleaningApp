@@ -72,6 +72,7 @@ export default async function TodayPage({
       goldenRuleTitle={goldenRuleTitle}
       todayLabel={todayLabel}
       today={today.toISOString()}
+      viewAsUserId={user.role === 'admin' && viewAs ? viewAs : undefined}
     />
   )
 }
