@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   Sparkles,
+  Eye,
 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -95,6 +96,13 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
               <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
           </div>
+          <Link
+            href="/today"
+            className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <Eye className="size-4 shrink-0" aria-hidden="true" />
+            Ver como usuário
+          </Link>
           <button
             type="button"
             onClick={() => {

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { UserBottomNav } from '@/components/layout/user-bottom-nav'
+import { AdminPreviewBanner } from '@/components/layout/admin-preview-banner'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Sparkles } from 'lucide-react'
 import { getInitials } from '@/lib/utils'
@@ -14,6 +15,8 @@ export default async function UserLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="flex flex-col min-h-screen">
+      {user.role === 'admin' && <AdminPreviewBanner />}
+
       {/* Compact top bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between h-14 px-4 border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-2">
