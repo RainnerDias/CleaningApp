@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, ClipboardList } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -131,10 +131,10 @@ export function TasksTable({ tasks, isLoading = false, onEdit, onDelete }: Tasks
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/40 text-left text-muted-foreground">
+            <tr className="border-b border-border bg-muted/50 text-left text-muted-foreground">
               <th className="px-4 py-3 font-medium">Sala</th>
               <th className="px-4 py-3 font-medium">Tarefa</th>
               <th className="px-4 py-3 font-medium hidden md:table-cell">Prioridade</th>
@@ -147,10 +147,17 @@ export function TasksTable({ tasks, isLoading = false, onEdit, onDelete }: Tasks
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
-                  {search || roomFilter !== 'all' || statusFilter !== 'all'
-                    ? 'Nenhuma tarefa encontrada para os filtros aplicados.'
-                    : 'Nenhuma tarefa cadastrada.'}
+                <td colSpan={7} className="px-4 py-14 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex size-12 items-center justify-center rounded-xl bg-muted">
+                      <ClipboardList className="size-5 text-muted-foreground" aria-hidden="true" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {search || roomFilter !== 'all' || statusFilter !== 'all'
+                        ? 'Nenhuma tarefa encontrada para os filtros aplicados.'
+                        : 'Nenhuma tarefa cadastrada ainda.'}
+                    </p>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -159,8 +166,8 @@ export function TasksTable({ tasks, isLoading = false, onEdit, onDelete }: Tasks
                   key={task.id}
                   className={
                     index < filtered.length - 1
-                      ? 'border-b border-border hover:bg-muted/20 transition-colors'
-                      : 'hover:bg-muted/20 transition-colors'
+                      ? 'border-b border-border hover:bg-muted/40 transition-colors'
+                      : 'hover:bg-muted/40 transition-colors'
                   }
                 >
                   {/* Room pill */}

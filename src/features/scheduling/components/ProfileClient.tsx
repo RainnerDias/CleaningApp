@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Loader2, Camera } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -112,7 +111,7 @@ function AvatarSection({ user, onAvatarChange }: AvatarSectionProps) {
       {/* Avatar circle */}
       <div className="relative">
         <div
-          className="size-20 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-border"
+          className="size-24 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-primary/20"
           aria-label={displayUrl ? `Foto de ${user.name}` : `Iniciais de ${user.name}`}
         >
           {displayUrl ? (
@@ -123,10 +122,7 @@ function AvatarSection({ user, onAvatarChange }: AvatarSectionProps) {
               className="w-full h-full object-cover"
             />
           ) : (
-            <span
-              className="text-xl font-bold text-muted-foreground select-none"
-              aria-hidden="true"
-            >
+            <span className="text-2xl font-bold text-primary select-none" aria-hidden="true">
               {getInitials(user.name)}
             </span>
           )}
@@ -221,9 +217,7 @@ function PersonalInfoSection({ user, onNameUpdate }: PersonalInfoSectionProps) {
 
   return (
     <section aria-label="Informações pessoais">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-        Informações pessoais
-      </h2>
+      <h2 className="text-base font-semibold mb-4">Informações pessoais</h2>
 
       <form onSubmit={handleSave} className="space-y-3" noValidate>
         {/* Name */}
@@ -339,9 +333,7 @@ function PasswordSection() {
 
   return (
     <section aria-label="Alterar senha">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-        Alterar senha
-      </h2>
+      <h2 className="text-base font-semibold mb-4">Alterar senha</h2>
 
       <form onSubmit={handleSubmit} className="space-y-3" noValidate>
         {/* New password */}
@@ -423,11 +415,9 @@ function StatsSection() {
   return (
     <section
       aria-label="Estatísticas do mês"
-      className="rounded-xl border border-border bg-card p-4 space-y-2"
+      className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-3"
     >
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-        Estatísticas do mês
-      </h2>
+      <h2 className="text-base font-semibold">Estatísticas do mês</h2>
 
       {isLoading && (
         <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
@@ -492,26 +482,24 @@ export function ProfileClient({ user: serverUser }: ProfileClientProps) {
       {/* ── Header ── */}
       <div className="px-4 pt-6 pb-4">
         <h1 className="text-2xl font-bold tracking-tight">Perfil</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">Gerencie suas informações pessoais</p>
       </div>
 
-      <div className="px-4 space-y-6 max-w-lg mx-auto">
-        {/* Avatar */}
-        <AvatarSection user={user} onAvatarChange={handleAvatarChange} />
+      <div className="px-4 space-y-4 max-w-lg mx-auto">
+        {/* Avatar card */}
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <AvatarSection user={user} onAvatarChange={handleAvatarChange} />
+        </div>
 
-        {/* Divider */}
-        <div className={cn('h-px bg-border')} aria-hidden="true" />
+        {/* Personal info card */}
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <PersonalInfoSection user={user} onNameUpdate={handleNameUpdate} />
+        </div>
 
-        {/* Personal info */}
-        <PersonalInfoSection user={user} onNameUpdate={handleNameUpdate} />
-
-        {/* Divider */}
-        <div className="h-px bg-border" aria-hidden="true" />
-
-        {/* Change password */}
-        <PasswordSection />
-
-        {/* Divider */}
-        <div className="h-px bg-border" aria-hidden="true" />
+        {/* Change password card */}
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <PasswordSection />
+        </div>
 
         {/* Stats */}
         <StatsSection />

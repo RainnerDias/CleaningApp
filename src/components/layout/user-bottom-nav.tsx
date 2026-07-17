@@ -35,10 +35,17 @@ export function UserBottomNav() {
             aria-label={label}
             className={cn(
               'flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-[10px] font-medium transition-colors',
-              isActive ? 'text-foreground' : 'text-muted-foreground'
+              isActive ? 'text-primary' : 'text-muted-foreground'
             )}
           >
-            <Icon className="size-5" aria-hidden="true" />
+            <div
+              className={cn(
+                'flex items-center justify-center rounded-full px-3 py-0.5 transition-colors',
+                isActive ? 'bg-primary/10' : 'bg-transparent'
+              )}
+            >
+              <Icon className="size-5" aria-hidden="true" />
+            </div>
             <span>{label}</span>
           </Link>
         )

@@ -43,11 +43,11 @@ export function UsersPageClient({ initialUsers }: UsersPageClientProps) {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="px-4 md:px-6 pt-6 pb-8 max-w-6xl mx-auto space-y-6">
       {/* Page header */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 border-b border-border pb-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Usuários</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Usuários</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Gerencie os usuários com acesso ao sistema.
           </p>

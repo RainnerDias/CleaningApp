@@ -62,9 +62,9 @@ function DayPanel({ date, schedules }: DayPanelProps) {
   return (
     <section
       aria-label={`Tarefas de ${dateLabel}`}
-      className="mt-4 rounded-xl border border-border bg-card p-4"
+      className="mt-4 rounded-xl border border-border bg-card p-4 shadow-sm"
     >
-      <h2 className="text-sm font-semibold mb-3 capitalize">{dateLabel}</h2>
+      <h2 className="text-sm font-semibold mb-3 capitalize text-foreground">{dateLabel}</h2>
 
       {schedules.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma tarefa neste dia.</p>
@@ -191,6 +191,7 @@ export function MonthClient({ initialSchedules, initialMonthStart }: MonthClient
       {/* ── Header ── */}
       <div className="px-4 pt-6 pb-4">
         <h1 className="text-2xl font-bold tracking-tight">Mês</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">Calendário mensal de tarefas</p>
       </div>
 
       {/* ── FullCalendar ── */}
@@ -204,7 +205,7 @@ export function MonthClient({ initialSchedules, initialMonthStart }: MonthClient
             background: transparent;
             border: 1px solid hsl(var(--border));
             color: hsl(var(--foreground));
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 0.8rem;
           }
           .fc .fc-button:hover { background: hsl(var(--muted)); }
@@ -214,32 +215,34 @@ export function MonthClient({ initialSchedules, initialMonthStart }: MonthClient
             border-color: hsl(var(--primary));
             color: hsl(var(--primary-foreground));
           }
-          .fc .fc-toolbar-title { font-size: 1rem; font-weight: 600; }
-          .fc th { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
-          .fc .fc-event { border-radius: 4px; font-size: 0.7rem; padding: 1px 3px; cursor: pointer; }
-          .fc .fc-daygrid-day-number { font-size: 0.8rem; }
-          .fc-theme-standard .fc-scrollgrid { border-color: hsl(var(--border)); }
+          .fc .fc-toolbar-title { font-size: 1rem; font-weight: 700; }
+          .fc th { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+          .fc .fc-event { border-radius: 5px; font-size: 0.7rem; padding: 1px 4px; cursor: pointer; }
+          .fc .fc-daygrid-day-number { font-size: 0.8rem; font-weight: 500; }
+          .fc-theme-standard .fc-scrollgrid { border-color: hsl(var(--border)); border-radius: 12px; overflow: hidden; }
           .fc-theme-standard td, .fc-theme-standard th { border-color: hsl(var(--border)); }
         `}</style>
 
-        <FullCalendar
-          ref={calendarRef}
-          plugins={[dayGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          locale={ptBrLocale}
-          events={events}
-          datesSet={handleDatesSet}
-          dateClick={handleDateClick}
-          headerToolbar={{
-            left: 'prev',
-            center: 'title',
-            right: 'next',
-          }}
-          height="auto"
-          dayMaxEvents={3}
-          eventDisplay="block"
-          fixedWeekCount={false}
-        />
+        <div className="rounded-xl overflow-hidden border border-border bg-card shadow-sm">
+          <FullCalendar
+            ref={calendarRef}
+            plugins={[dayGridPlugin, interactionPlugin]}
+            initialView="dayGridMonth"
+            locale={ptBrLocale}
+            events={events}
+            datesSet={handleDatesSet}
+            dateClick={handleDateClick}
+            headerToolbar={{
+              left: 'prev',
+              center: 'title',
+              right: 'next',
+            }}
+            height="auto"
+            dayMaxEvents={3}
+            eventDisplay="block"
+            fixedWeekCount={false}
+          />
+        </div>
       </div>
 
       {/* ── Selected day panel ── */}

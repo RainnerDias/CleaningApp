@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -41,10 +41,10 @@ export function RoomsTable({ rooms, isLoading = false, onEdit, onDelete }: Rooms
       />
 
       {/* Table */}
-      <div className="overflow-hidden rounded-lg border border-border">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/40 text-left text-muted-foreground">
+            <tr className="border-b border-border bg-muted/50 text-left text-muted-foreground">
               <th className="px-4 py-3 font-medium w-12">Cor</th>
               <th className="px-4 py-3 font-medium">Nome</th>
               <th className="px-4 py-3 font-medium hidden sm:table-cell">Tarefas</th>
@@ -55,8 +55,17 @@ export function RoomsTable({ rooms, isLoading = false, onEdit, onDelete }: Rooms
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
-                  {search ? 'Nenhuma sala encontrada para a busca.' : 'Nenhuma sala cadastrada.'}
+                <td colSpan={5} className="px-4 py-14 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex size-12 items-center justify-center rounded-xl bg-muted">
+                      <Home className="size-5 text-muted-foreground" aria-hidden="true" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {search
+                        ? 'Nenhuma sala encontrada para a busca.'
+                        : 'Nenhuma sala cadastrada ainda.'}
+                    </p>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -65,8 +74,8 @@ export function RoomsTable({ rooms, isLoading = false, onEdit, onDelete }: Rooms
                   key={room.id}
                   className={
                     index < filtered.length - 1
-                      ? 'border-b border-border hover:bg-muted/20 transition-colors'
-                      : 'hover:bg-muted/20 transition-colors'
+                      ? 'border-b border-border hover:bg-muted/40 transition-colors'
+                      : 'hover:bg-muted/40 transition-colors'
                   }
                 >
                   {/* Color swatch */}

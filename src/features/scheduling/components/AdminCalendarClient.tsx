@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useCallback, useEffect } from 'react'
+import { useRef, useState, useCallback, useEffect, useSyncExternalStore } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -31,10 +31,7 @@ const STATUS_LABEL: Record<ScheduleWithDetails['status'], string> = {
   skipped: 'Ignorado',
 }
 
-const STATUS_VARIANT: Record<
-  ScheduleWithDetails['status'],
-  'default' | 'success' | 'secondary'
-> = {
+const STATUS_VARIANT: Record<ScheduleWithDetails['status'], 'default' | 'success' | 'secondary'> = {
   pending: 'default',
   completed: 'success',
   skipped: 'secondary',
@@ -87,17 +84,17 @@ export function AdminCalendarClient() {
   })
 
   // ---------------------------------------------------------------------------
-  // Mobile responsive view
+  // Mobile responsive view — useSyncExternalStore avoids setState-in-effect
   // ---------------------------------------------------------------------------
-  const [isMobile, setIsMobile] = useState(false)
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 639px)')
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
-    setIsMobile(mq.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [])
+  const isMobile = useSyncExternalStore(
+    (callback) => {
+      const mq = window.matchMedia('(max-width: 639px)')
+      mq.addEventListener('change', callback)
+      return () => mq.removeEventListener('change', callback)
+    },
+    () => window.matchMedia('(max-width: 639px)').matches,
+    () => false // server snapshot — assume not mobile during SSR
+  )
 
   // Imperatively change the FullCalendar view when the breakpoint flips
   useEffect(() => {
@@ -143,11 +140,11 @@ export function AdminCalendarClient() {
   const hasSchedules = schedules.length > 0
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-4">
+    <div className="px-4 md:px-6 pt-6 pb-8 max-w-7xl mx-auto space-y-6">
       {/* ── Page header ─────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 border-b border-border pb-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Calendário</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Calendário</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Visualize e gere os agendamentos de tarefas.
           </p>
@@ -203,15 +200,18 @@ export function AdminCalendarClient() {
       )}
 
       {/* ── Calendar ────────────────────────────────────────────────────── */}
-      <div className="relative rounded-xl border border-border bg-background overflow-hidden">
+      <div className="relative rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         {/* Loading overlay */}
         {isLoading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-sm">
-            <RefreshCw className="size-6 animate-spin text-muted-foreground" aria-label="Carregando" />
+            <RefreshCw
+              className="size-6 animate-spin text-muted-foreground"
+              aria-label="Carregando"
+            />
           </div>
         )}
 
-        <div className="p-2 sm:p-4">
+        <div className="p-3 sm:p-5">
           <FullCalendar
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -244,9 +244,7 @@ export function AdminCalendarClient() {
             <DialogTitle>
               {selectedSchedule?.task.room.icon} {selectedSchedule?.task.title}
             </DialogTitle>
-            <DialogDescription>
-              Detalhes do agendamento selecionado.
-            </DialogDescription>
+            <DialogDescription>Detalhes do agendamento selecionado.</DialogDescription>
           </DialogHeader>
 
           {selectedSchedule !== null && (
@@ -258,9 +256,7 @@ export function AdminCalendarClient() {
 
               <div className="flex items-center justify-between py-2.5 text-sm">
                 <dt className="text-muted-foreground">Responsável</dt>
-                <dd className="font-medium">
-                  {selectedSchedule.user?.name ?? 'Não atribuído'}
-                </dd>
+                <dd className="font-medium">{selectedSchedule.user?.name ?? 'Não atribuído'}</dd>
               </div>
 
               <div className="flex items-center justify-between py-2.5 text-sm">

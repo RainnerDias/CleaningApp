@@ -87,8 +87,8 @@ function DayTaskCard({ schedule, onClick }: DayTaskCardProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        'w-full text-left rounded-lg px-2 py-1.5 text-xs border border-border bg-card',
-        'hover:bg-muted/50 transition-colors',
+        'w-full text-left rounded-lg px-2.5 py-2 text-xs border border-border bg-card shadow-sm',
+        'hover:bg-muted/50 hover:border-border/80 transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
         'flex items-center gap-1.5 min-w-0',
         schedule.status === 'completed' && 'opacity-60',
@@ -258,11 +258,18 @@ function DayColumn({ day, schedules, onTaskClick }: DayColumnProps) {
       {/* Day header */}
       <div
         className={cn(
-          'rounded-lg px-2 py-1.5 text-center',
-          todayHighlight ? 'bg-primary text-primary-foreground' : 'bg-muted/40'
+          'rounded-xl px-2 py-2 text-center shadow-sm',
+          todayHighlight ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'
         )}
       >
-        <p className="text-xs font-semibold">{WEEK_DAY_ABBR[day.getDay()]}</p>
+        <p
+          className={cn(
+            'text-xs font-semibold',
+            todayHighlight ? 'text-primary-foreground/80' : 'text-muted-foreground'
+          )}
+        >
+          {WEEK_DAY_ABBR[day.getDay()]}
+        </p>
         <p
           className={cn(
             'text-sm font-bold tabular-nums',
@@ -276,10 +283,10 @@ function DayColumn({ day, schedules, onTaskClick }: DayColumnProps) {
       {/* Task list */}
       {schedules.length === 0 ? (
         <div
-          className="flex items-center justify-center h-10 text-muted-foreground text-xs select-none"
+          className="flex items-center justify-center h-12 text-muted-foreground/40 text-xs select-none"
           aria-label="Sem tarefas"
         >
-          —
+          ·
         </div>
       ) : (
         <ul className="flex flex-col gap-1" aria-label={`Tarefas de ${dayLabel}`}>
@@ -385,9 +392,10 @@ export function WeekClient({
       {/* ── Header ── */}
       <div className="px-4 pt-6 pb-4">
         <h1 className="text-2xl font-bold tracking-tight">Semana</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">Veja as tarefas desta semana</p>
 
         {/* Week navigation */}
-        <nav aria-label="Navegação da semana" className="mt-3 flex items-center gap-2">
+        <nav aria-label="Navegação da semana" className="mt-4 flex items-center gap-2">
           <Button
             variant="outline"
             size="icon-sm"
@@ -437,7 +445,7 @@ export function WeekClient({
         <div
           role="grid"
           aria-label="Grade de tarefas da semana"
-          className="grid grid-cols-7 gap-2"
+          className="grid grid-cols-7 gap-2.5"
           style={{ minWidth: '560px' }}
         >
           {days.map((day) => {

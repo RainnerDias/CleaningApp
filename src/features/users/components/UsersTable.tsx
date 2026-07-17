@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Pencil, UserCheck, UserX } from 'lucide-react'
+import { Pencil, UserCheck, UserX, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -76,10 +76,10 @@ export function UsersTable({ users, isLoading = false, onEdit, onToggleActive }:
       />
 
       {/* Table */}
-      <div className="overflow-hidden rounded-lg border border-border">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/40 text-left text-muted-foreground">
+            <tr className="border-b border-border bg-muted/50 text-left text-muted-foreground">
               <th className="px-4 py-3 font-medium w-12">Avatar</th>
               <th className="px-4 py-3 font-medium">Nome</th>
               <th className="px-4 py-3 font-medium hidden md:table-cell">Email</th>
@@ -92,10 +92,17 @@ export function UsersTable({ users, isLoading = false, onEdit, onToggleActive }:
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
-                  {search
-                    ? 'Nenhum usuário encontrado para a busca.'
-                    : 'Nenhum usuário cadastrado.'}
+                <td colSpan={7} className="px-4 py-14 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="flex size-12 items-center justify-center rounded-xl bg-muted">
+                      <Users className="size-5 text-muted-foreground" aria-hidden="true" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {search
+                        ? 'Nenhum usuário encontrado para a busca.'
+                        : 'Nenhum usuário cadastrado ainda.'}
+                    </p>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -104,8 +111,8 @@ export function UsersTable({ users, isLoading = false, onEdit, onToggleActive }:
                   key={user.id}
                   className={
                     index < filtered.length - 1
-                      ? 'border-b border-border hover:bg-muted/20 transition-colors'
-                      : 'hover:bg-muted/20 transition-colors'
+                      ? 'border-b border-border hover:bg-muted/40 transition-colors'
+                      : 'hover:bg-muted/40 transition-colors'
                   }
                 >
                   {/* Avatar */}

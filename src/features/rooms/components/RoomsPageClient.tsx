@@ -42,11 +42,11 @@ export function RoomsPageClient({ initialRooms }: RoomsPageClientProps) {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="px-4 md:px-6 pt-6 pb-8 max-w-5xl mx-auto space-y-6">
       {/* Page header */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 border-b border-border pb-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Salas</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Salas</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Gerencie as salas da casa para organizar as tarefas.
           </p>

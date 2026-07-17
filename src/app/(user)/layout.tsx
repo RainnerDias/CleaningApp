@@ -21,7 +21,7 @@ export default async function UserLayout({ children }: { children: React.ReactNo
 
         {/* User avatar placeholder */}
         <div
-          className="size-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold uppercase select-none"
+          className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold uppercase select-none"
           aria-label={`Logged in as ${user.name}`}
         >
           {user.name.charAt(0)}

@@ -3,7 +3,16 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Camera, MessageSquare, X, ChevronDown, ChevronUp, Loader2, Star } from 'lucide-react'
+import {
+  Camera,
+  MessageSquare,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Star,
+  PartyPopper,
+} from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -612,18 +621,19 @@ function RoomSection({ room, schedules, optimisticStatuses, onToggle, onSkip }: 
   return (
     <section aria-label={`Tarefas — ${room.name}`} className="mb-6">
       {/* Room header */}
-      <div className="mb-3 flex items-center gap-2">
+      <div className="mb-3 flex items-center gap-2 px-1">
         <span
-          className="size-2.5 rounded-full shrink-0"
+          className="size-3 rounded-full shrink-0"
           style={{ backgroundColor: room.color }}
           aria-hidden="true"
         />
-        <span className="text-base" aria-hidden="true">
+        <span className="text-base leading-none" aria-hidden="true">
           {room.icon}
         </span>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          {room.name}
-        </h2>
+        <h2 className="text-sm font-semibold tracking-wide text-foreground">{room.name}</h2>
+        <span className="ml-auto text-xs text-muted-foreground">
+          {schedules.length} {schedules.length === 1 ? 'tarefa' : 'tarefas'}
+        </span>
       </div>
 
       {/* Task cards */}
@@ -754,8 +764,8 @@ export function TodayClient({
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-background pb-8">
-      {/* ── Header ── */}
-      <div className="px-4 pt-6 pb-4">
+      {/* ── Header card ── */}
+      <div className="mx-4 mt-6 mb-4 rounded-xl border border-border bg-card p-4 shadow-sm">
         <h1 className="text-2xl font-bold tracking-tight">Bom dia, {firstName}! ☀️</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">{todayLabel}</p>
 
@@ -838,13 +848,13 @@ export function TodayClient({
         {schedules.length === 0 ? (
           /* Empty state */
           <div
-            className="flex flex-col items-center justify-center gap-3 py-20 text-center"
+            className="flex flex-col items-center justify-center gap-4 py-20 text-center"
             role="status"
             aria-live="polite"
           >
-            <span className="text-5xl" aria-hidden="true">
-              🌟
-            </span>
+            <div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
+              <PartyPopper className="size-7 text-muted-foreground" aria-hidden="true" />
+            </div>
             <div>
               <p className="text-lg font-semibold">Nenhuma tarefa para hoje!</p>
               <p className="mt-1 text-sm text-muted-foreground">Aproveite seu dia de descanso.</p>
