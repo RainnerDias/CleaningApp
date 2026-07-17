@@ -127,6 +127,8 @@ model Schedule {
   assignedTo  String         @map("assigned_to") @db.Uuid
   status      ScheduleStatus @default(pending)
   completedAt DateTime?      @map("completed_at")
+  startedAt   DateTime?      @map("started_at")
+  stoppedAt   DateTime?      @map("stopped_at")
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
 

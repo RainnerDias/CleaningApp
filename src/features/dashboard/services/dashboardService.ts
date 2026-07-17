@@ -51,6 +51,10 @@ type AvgRow = {
   avgMinutes: number
 }
 
+type AvgActualRow = {
+  avgActualMinutes: number
+}
+
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
@@ -79,6 +83,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     byUserRows,
     avgRows,
     recentCommentRows,
+    avgActualRows,
   ] = await Promise.all([
     // 1. Status breakdown for last 30 days (completionRate, completedCount, skippedCount)
     prisma.schedule.groupBy({
@@ -198,6 +203,18 @@ export async function getDashboardData(): Promise<DashboardData> {
         },
       },
     }),
+
+    // 12. Average actual clock duration in minutes — last 30 days
+    prisma.$queryRaw<AvgActualRow[]>`
+      SELECT COALESCE(
+        AVG(EXTRACT(EPOCH FROM (stopped_at - started_at)) / 60)::int,
+        0
+      ) AS "avgActualMinutes"
+      FROM schedules
+      WHERE date >= ${thirtyDaysAgo}::date
+        AND stopped_at IS NOT NULL
+        AND started_at IS NOT NULL
+    `,
   ])
 
   // ---------------------------------------------------------------------------
@@ -282,6 +299,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     pendingCount,
     skippedCount,
     avgCompletionMinutes: avgRows[0]?.avgMinutes ?? 0,
+    avgActualMinutes: avgActualRows[0]?.avgActualMinutes ?? 0,
     heatmap,
     monthlyTrend,
     byRoom: byRoomRows as ByRoomEntry[],

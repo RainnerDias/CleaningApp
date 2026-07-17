@@ -35,7 +35,13 @@ export const updateStatusSchema = z.object({
   status: z.enum(['pending', 'completed', 'skipped']),
 })
 
+/** Body for POST /api/schedules/[id]/clock */
+export const clockActionSchema = z.object({
+  action: z.enum(['in', 'out']),
+})
+
 export type GenerateScheduleInput = z.infer<typeof generateScheduleSchema>
 export type ListSchedulesInput = z.infer<typeof listSchedulesSchema>
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>
+export type ClockActionInput = z.infer<typeof clockActionSchema>
 export type ScheduleStatusFilter = 'pending' | 'completed' | 'skipped'

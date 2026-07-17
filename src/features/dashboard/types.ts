@@ -69,6 +69,8 @@ export interface DashboardData {
   skippedCount: number
   /** Average minutes from schedule date to completedAt, last 30 days */
   avgCompletionMinutes: number
+  /** Average actual minutes clocked (stoppedAt - startedAt), last 30 days — 0 if no data */
+  avgActualMinutes: number
   /** Per-day activity for the last 90 days */
   heatmap: HeatmapEntry[]
   /** Per-month status counts for the last 12 months */

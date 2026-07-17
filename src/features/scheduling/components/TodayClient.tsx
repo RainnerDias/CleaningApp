@@ -12,6 +12,7 @@ import {
   Loader2,
   Star,
   PartyPopper,
+  Timer,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
@@ -24,6 +25,8 @@ import {
   useAddComment,
   useUploadPhoto,
   useDeletePhoto,
+  useClockIn,
+  useClockOut,
 } from '../hooks/useSchedules'
 
 // ---------------------------------------------------------------------------
@@ -203,11 +206,24 @@ function TaskCard({ schedule, effectiveStatus, onToggle, onSkip }: TaskCardProps
   const addComment = useAddComment()
   const uploadPhoto = useUploadPhoto()
   const deletePhoto = useDeletePhoto()
+  const clockIn = useClockIn()
+  const clockOut = useClockOut()
 
   // ── Derived state ───────────────────────────────────────────────────────
   const isCompleted = effectiveStatus === 'completed'
   const isSkipped = effectiveStatus === 'skipped'
   const isCollapsed = isSkipped
+
+  const isClockedIn = Boolean(schedule.startedAt) && !schedule.stoppedAt
+  const isClockedOut = Boolean(schedule.startedAt) && Boolean(schedule.stoppedAt)
+
+  function formatDuration(startedAt: string | null, stoppedAt: string | null): string | null {
+    if (!startedAt) return null
+    const end = stoppedAt ? new Date(stoppedAt) : null
+    if (!end) return null
+    const mins = Math.round((end.getTime() - new Date(startedAt).getTime()) / 60_000)
+    return `${mins} min real`
+  }
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -600,6 +616,68 @@ function TaskCard({ schedule, effectiveStatus, onToggle, onSkip }: TaskCardProps
             </motion.button>
           )}
         </AnimatePresence>
+      </div>
+
+      {/* ── Clock row ── */}
+      <div className="mt-2 pl-9 flex items-center gap-2 flex-wrap">
+        {!isClockedIn && !isClockedOut && (
+          <button
+            type="button"
+            onClick={() => {
+              clockIn.mutate({ scheduleId: schedule.id })
+            }}
+            disabled={clockIn.isPending}
+            aria-busy={clockIn.isPending}
+            aria-label={`Iniciar cronômetro para "${task.title}"`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            {clockIn.isPending ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <Timer className="size-3.5" aria-hidden="true" />
+            )}
+            Iniciar
+          </button>
+        )}
+        {isClockedIn && !isClockedOut && (
+          <button
+            type="button"
+            onClick={() => {
+              clockOut.mutate({ scheduleId: schedule.id })
+            }}
+            disabled={clockOut.isPending}
+            aria-busy={clockOut.isPending}
+            aria-label={`Parar cronômetro para "${task.title}"`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary bg-primary/5 px-3 py-1.5 text-xs text-primary hover:bg-primary/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            {clockOut.isPending ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            ) : (
+              <Timer className="size-3.5 text-primary" aria-hidden="true" />
+            )}
+            Parar
+          </button>
+        )}
+        {isClockedOut &&
+          (() => {
+            const dur = formatDuration(schedule.startedAt, schedule.stoppedAt)
+            return dur ? (
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <Timer className="size-3.5" aria-hidden="true" />
+                {dur}
+              </span>
+            ) : null
+          })()}
+        {clockIn.isError && (
+          <p role="alert" className="text-xs text-destructive">
+            {clockIn.error.message}
+          </p>
+        )}
+        {clockOut.isError && (
+          <p role="alert" className="text-xs text-destructive">
+            {clockOut.error.message}
+          </p>
+        )}
       </div>
     </motion.div>
   )

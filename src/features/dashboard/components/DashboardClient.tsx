@@ -311,6 +311,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
     pendingCount: 0,
     skippedCount: 0,
     avgCompletionMinutes: 0,
+    avgActualMinutes: 0,
     heatmap: [],
     monthlyTrend: [],
     byRoom: [],
@@ -385,6 +386,12 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
               dashboard.avgCompletionMinutes > 0 ? `${dashboard.avgCompletionMinutes} min` : '—'
             }
             subtext="Por tarefa (30 dias)"
+          />
+          <KpiCard
+            icon={Timer}
+            label="Tempo Real Médio"
+            value={dashboard.avgActualMinutes > 0 ? `${dashboard.avgActualMinutes} min` : '—'}
+            subtext="cronômetro (clock in → out)"
           />
         </div>
       </section>

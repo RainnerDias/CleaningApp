@@ -8,6 +8,8 @@ export interface ScheduleWithDetails {
   date: string
   status: 'pending' | 'completed' | 'skipped'
   completedAt: string | null
+  startedAt: string | null
+  stoppedAt: string | null
   task: {
     id: string
     title: string

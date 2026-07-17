@@ -44,4 +44,57 @@ export const scheduleService = {
   },
 
   getStats: (from: Date, to: Date) => scheduleRepository.getStats(from, to),
+
+  /**
+   * Records clock-in for a schedule.
+   *
+   * Authorization rules:
+   *  - Admins may clock in for any schedule.
+   *  - Regular users may only clock in for schedules assigned to them.
+   *
+   * @throws {Error} 'Schedule not found' when the ID does not exist.
+   * @throws {Error} 'Unauthorized' when the caller does not own the schedule.
+   */
+  clockIn: async (scheduleId: string, callerId: string) => {
+    const [schedule, caller] = await Promise.all([
+      prisma.schedule.findUnique({ where: { id: scheduleId }, select: { assignedTo: true } }),
+      prisma.user.findUnique({ where: { id: callerId }, select: { role: true } }),
+    ])
+
+    if (!schedule) throw new Error('Schedule not found')
+    if (caller?.role !== 'admin' && schedule.assignedTo !== callerId) {
+      throw new Error('Unauthorized')
+    }
+
+    return scheduleRepository.clockIn(scheduleId)
+  },
+
+  /**
+   * Records clock-out for a schedule.
+   *
+   * Authorization rules:
+   *  - Admins may clock out for any schedule.
+   *  - Regular users may only clock out for schedules assigned to them.
+   *
+   * @throws {Error} 'Schedule not found' when the ID does not exist.
+   * @throws {Error} 'Unauthorized' when the caller does not own the schedule.
+   * @throws {Error} 'Clock-in required' when no startedAt is recorded.
+   */
+  clockOut: async (scheduleId: string, callerId: string) => {
+    const [schedule, caller] = await Promise.all([
+      prisma.schedule.findUnique({
+        where: { id: scheduleId },
+        select: { assignedTo: true, startedAt: true },
+      }),
+      prisma.user.findUnique({ where: { id: callerId }, select: { role: true } }),
+    ])
+
+    if (!schedule) throw new Error('Schedule not found')
+    if (caller?.role !== 'admin' && schedule.assignedTo !== callerId) {
+      throw new Error('Unauthorized')
+    }
+    if (!schedule.startedAt) throw new Error('Clock-in required')
+
+    return scheduleRepository.clockOut(scheduleId)
+  },
 }

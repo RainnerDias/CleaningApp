@@ -68,6 +68,20 @@ export const scheduleRepository = {
       },
     }),
 
+  /** Records clock-in timestamp for a schedule. */
+  clockIn: (id: string) =>
+    prisma.schedule.update({
+      where: { id },
+      data: { startedAt: new Date(), stoppedAt: null },
+    }),
+
+  /** Records clock-out timestamp for a schedule. */
+  clockOut: (id: string) =>
+    prisma.schedule.update({
+      where: { id },
+      data: { stoppedAt: new Date() },
+    }),
+
   /** Returns counts grouped by status for the given date range. */
   getStats: async (from: Date, to: Date): Promise<Record<string, number>> => {
     const rows = await prisma.schedule.groupBy({

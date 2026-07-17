@@ -239,3 +239,41 @@ export function useScheduleHistory(
     staleTime: 60_000,
   })
 }
+
+/**
+ * Records a clock-in timestamp for a schedule.
+ * Invalidates all schedule queries on success.
+ */
+export function useClockIn() {
+  const qc = useQueryClient()
+  return useMutation<void, Error, { scheduleId: string }>({
+    mutationFn: async ({ scheduleId }) => {
+      const res = await fetch(`/api/schedules/${scheduleId}/clock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'in' }),
+      })
+      await handleResponse<unknown>(res)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: scheduleKeys.all }),
+  })
+}
+
+/**
+ * Records a clock-out timestamp for a schedule.
+ * Invalidates all schedule queries on success.
+ */
+export function useClockOut() {
+  const qc = useQueryClient()
+  return useMutation<void, Error, { scheduleId: string }>({
+    mutationFn: async ({ scheduleId }) => {
+      const res = await fetch(`/api/schedules/${scheduleId}/clock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'out' }),
+      })
+      await handleResponse<unknown>(res)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: scheduleKeys.all }),
+  })
+}
