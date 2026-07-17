@@ -23,13 +23,29 @@ const FALLBACKS: ChartColors = {
 // noop subscribe — CSS variables don't push updates
 const subscribe = () => () => {}
 
+// Module-level cache so getClientSnapshot returns a stable reference
+// when the underlying CSS variable values haven't changed.
+// useSyncExternalStore uses Object.is to compare snapshots — returning a
+// new object every call causes an infinite re-render loop (React error #185).
+let _cached: ChartColors = FALLBACKS
+
 function getClientSnapshot(): ChartColors {
-  return {
-    completed: readVar('--chart-completed', FALLBACKS.completed),
-    pending: readVar('--chart-pending', FALLBACKS.pending),
-    skipped: readVar('--chart-skipped', FALLBACKS.skipped),
-    destructive: readVar('--destructive', FALLBACKS.destructive),
+  const completed = readVar('--chart-completed', FALLBACKS.completed)
+  const pending = readVar('--chart-pending', FALLBACKS.pending)
+  const skipped = readVar('--chart-skipped', FALLBACKS.skipped)
+  const destructive = readVar('--destructive', FALLBACKS.destructive)
+
+  if (
+    _cached.completed === completed &&
+    _cached.pending === pending &&
+    _cached.skipped === skipped &&
+    _cached.destructive === destructive
+  ) {
+    return _cached
   }
+
+  _cached = { completed, pending, skipped, destructive }
+  return _cached
 }
 
 function getServerSnapshot(): ChartColors {
