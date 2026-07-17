@@ -91,17 +91,17 @@ async function main() {
   // Rooms
   // ---------------------------------------------------------------------------
   const roomData = [
-    { name: 'Cozinha', icon: 'chef-hat', color: '#F97316', displayOrder: 1 },
-    { name: 'Suíte', icon: 'bed', color: '#8B5CF6', displayOrder: 2 },
-    { name: 'Quarto Clarice', icon: 'bed', color: '#EC4899', displayOrder: 3 },
-    { name: 'Quarto 3', icon: 'bed', color: '#A78BFA', displayOrder: 4 },
-    { name: 'Sala', icon: 'sofa', color: '#10B981', displayOrder: 5 },
-    { name: 'Corredor e Escada', icon: 'arrow-up', color: '#6B7280', displayOrder: 6 },
-    { name: 'Escritório', icon: 'monitor', color: '#0EA5E9', displayOrder: 7 },
-    { name: 'Banheiros', icon: 'bath', color: '#06B6D4', displayOrder: 8 },
-    { name: 'Lavanderia', icon: 'washing-machine', color: '#3B82F6', displayOrder: 9 },
-    { name: 'Despensa', icon: 'package', color: '#F59E0B', displayOrder: 10 },
-    { name: 'Garagem', icon: 'car', color: '#6B7280', displayOrder: 11 },
+    { name: 'Cozinha', icon: '🍳', color: '#F97316', displayOrder: 1 },
+    { name: 'Suíte', icon: '🛏️', color: '#8B5CF6', displayOrder: 2 },
+    { name: 'Quarto Clarice', icon: '🛏️', color: '#EC4899', displayOrder: 3 },
+    { name: 'Quarto 3', icon: '🛏️', color: '#A78BFA', displayOrder: 4 },
+    { name: 'Sala', icon: '🛋️', color: '#10B981', displayOrder: 5 },
+    { name: 'Corredor e Escada', icon: '🪜', color: '#6B7280', displayOrder: 6 },
+    { name: 'Escritório', icon: '💻', color: '#0EA5E9', displayOrder: 7 },
+    { name: 'Banheiros', icon: '🚿', color: '#06B6D4', displayOrder: 8 },
+    { name: 'Lavanderia', icon: '🧺', color: '#3B82F6', displayOrder: 9 },
+    { name: 'Despensa', icon: '📦', color: '#F59E0B', displayOrder: 10 },
+    { name: 'Garagem', icon: '🚗', color: '#6B7280', displayOrder: 11 },
   ]
 
   const createdRooms = await prisma.$transaction(
