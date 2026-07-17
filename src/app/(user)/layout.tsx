@@ -46,7 +46,7 @@ export default async function UserLayout({ children }: { children: React.ReactNo
       </header>
 
       {/* Page content — padded bottom to clear the fixed bottom nav */}
-      <main className="flex-1 overflow-auto pb-16">{children}</main>
+      <main className="flex-1 overflow-y-auto overflow-x-hidden pb-16">{children}</main>
 
       <UserBottomNav />
     </div>

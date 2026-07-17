@@ -254,7 +254,7 @@ function DayColumn({ day, schedules, onTaskClick }: DayColumnProps) {
   const dayLabel = format(day, "EEEE, d 'de' MMMM", { locale: ptBR })
 
   return (
-    <div role="gridcell" aria-label={dayLabel} className="flex flex-col gap-1.5 min-w-[120px]">
+    <div role="gridcell" aria-label={dayLabel} className="flex flex-col gap-1.5 min-w-0">
       {/* Day header */}
       <div
         className={cn(

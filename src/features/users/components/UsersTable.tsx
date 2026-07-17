@@ -76,7 +76,7 @@ export function UsersTable({ users, isLoading = false, onEdit, onToggleActive }:
       />
 
       {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50 text-left text-muted-foreground">

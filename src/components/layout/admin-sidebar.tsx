@@ -142,7 +142,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
               >
                 <Icon className="size-4" aria-hidden="true" />
               </div>
-              <span className="leading-none">{label}</span>
+              <span className="leading-none truncate w-full text-center">{label}</span>
             </Link>
           )
         })}
