@@ -10,7 +10,7 @@ const PUBLIC_PATHS = new Set([
   '/api/auth/me',
 ])
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
