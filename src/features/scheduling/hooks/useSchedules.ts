@@ -277,3 +277,29 @@ export function useClockOut() {
     onSuccess: () => qc.invalidateQueries({ queryKey: scheduleKeys.all }),
   })
 }
+
+/**
+ * Toggles the completion state of a single subtask within a schedule.
+ * POSTs to /api/schedules/:scheduleId/items/:taskItemId/toggle.
+ * On success, invalidates all schedule queries so the UI reflects the new state.
+ */
+export function useToggleItemCompletion() {
+  const qc = useQueryClient()
+  return useMutation<
+    { completionId: string; completedAt: string | null; scheduleStatus: string },
+    Error,
+    { scheduleId: string; taskItemId: string }
+  >({
+    mutationFn: ({ scheduleId, taskItemId }) =>
+      fetch(`/api/schedules/${scheduleId}/items/${taskItemId}/toggle`, {
+        method: 'POST',
+      }).then((r) =>
+        handleResponse<{
+          completionId: string
+          completedAt: string | null
+          scheduleStatus: string
+        }>(r)
+      ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: scheduleKeys.all }),
+  })
+}

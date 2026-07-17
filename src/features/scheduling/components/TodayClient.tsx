@@ -18,7 +18,7 @@ import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import type { ScheduleWithDetails } from '../types'
+import type { ScheduleWithDetails, TaskItemWithCompletion } from '../types'
 import {
   useTodaySchedules,
   useUpdateScheduleStatus,
@@ -27,6 +27,7 @@ import {
   useDeletePhoto,
   useClockIn,
   useClockOut,
+  useToggleItemCompletion,
 } from '../hooks/useSchedules'
 
 // ---------------------------------------------------------------------------
@@ -166,6 +167,28 @@ function GoldenRuleBanner({ text }: GoldenRuleBannerProps) {
 }
 
 // ---------------------------------------------------------------------------
+// Checklist helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Joins task.items with schedule.itemCompletions to produce a flat list
+ * of items with their completion state for the current schedule instance.
+ */
+function deriveChecklist(schedule: ScheduleWithDetails): TaskItemWithCompletion[] {
+  return schedule.task.items.map((item) => {
+    const comp = schedule.itemCompletions.find((c) => c.taskItemId === item.id)
+    return {
+      id: item.id,
+      title: item.title,
+      note: item.note,
+      displayOrder: item.displayOrder,
+      completedAt: comp?.completedAt ?? null,
+      completionId: comp?.id ?? null,
+    }
+  })
+}
+
+// ---------------------------------------------------------------------------
 // TaskCard
 // ---------------------------------------------------------------------------
 
@@ -200,9 +223,16 @@ function TaskCard({ schedule, effectiveStatus, onToggle, onSkip }: TaskCardProps
   const deletePhoto = useDeletePhoto()
   const clockIn = useClockIn()
   const clockOut = useClockOut()
+  const toggleItem = useToggleItemCompletion()
 
   // ── Derived state ───────────────────────────────────────────────────────
-  const isCompleted = effectiveStatus === 'completed'
+  const checklist = deriveChecklist(schedule)
+  const hasChecklist = checklist.length > 0
+  // When there's a checklist, the main checkbox is driven by all items being done
+  const allItemsDone = hasChecklist && checklist.every((item) => item.completedAt !== null)
+  const completedItemCount = checklist.filter((item) => item.completedAt !== null).length
+
+  const isCompleted = hasChecklist ? allItemsDone : effectiveStatus === 'completed'
   const isSkipped = effectiveStatus === 'skipped'
   const isCollapsed = isSkipped
 
@@ -306,14 +336,20 @@ function TaskCard({ schedule, effectiveStatus, onToggle, onSkip }: TaskCardProps
         {/* Circular checkbox */}
         <button
           type="button"
-          onClick={onToggle}
+          onClick={hasChecklist ? undefined : onToggle}
+          disabled={hasChecklist}
           aria-label={
-            isCompleted
-              ? `Marcar "${task.title}" como pendente`
-              : `Marcar "${task.title}" como concluída`
+            hasChecklist
+              ? `${task.title} — ${completedItemCount} de ${checklist.length} subtarefas concluídas`
+              : isCompleted
+                ? `Marcar "${task.title}" como pendente`
+                : `Marcar "${task.title}" como concluída`
           }
           aria-pressed={isCompleted}
-          className="mt-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full"
+          className={cn(
+            'mt-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full',
+            hasChecklist && 'cursor-default opacity-70'
+          )}
         >
           <motion.div
             className="size-6 rounded-full border-2 flex items-center justify-center"
@@ -394,6 +430,78 @@ function TaskCard({ schedule, effectiveStatus, onToggle, onSkip }: TaskCardProps
           </span>
         )}
       </div>
+
+      {/* ── Checklist ── */}
+      {hasChecklist && (
+        <div className="mt-3 pl-9">
+          <p className="text-xs text-muted-foreground mb-2">
+            {completedItemCount} de {checklist.length}{' '}
+            {checklist.length === 1 ? 'concluída' : 'concluídas'}
+          </p>
+          <ul className="space-y-1.5" aria-label={`Subtarefas de ${task.title}`}>
+            {checklist.map((item) => {
+              const isDone = item.completedAt !== null
+              return (
+                <li key={item.id} className="flex items-start gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toggleItem.mutate({ scheduleId: schedule.id, taskItemId: item.id })
+                    }
+                    disabled={toggleItem.isPending}
+                    aria-label={
+                      isDone ? `Desmarcar "${item.title}"` : `Marcar "${item.title}" como concluída`
+                    }
+                    aria-pressed={isDone}
+                    className="mt-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded-full"
+                  >
+                    <motion.div
+                      className="size-4 rounded-full border-2 flex items-center justify-center"
+                      animate={{
+                        backgroundColor: isDone ? '#22c55e' : 'transparent',
+                        borderColor: isDone ? '#22c55e' : '#9ca3af',
+                      }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <svg viewBox="0 0 24 24" className="size-2.5" fill="none" aria-hidden="true">
+                        <motion.path
+                          d="M5 13l4 4L19 7"
+                          variants={checkmarkVariants}
+                          animate={isDone ? 'checked' : 'unchecked'}
+                          stroke="white"
+                          strokeWidth={2.5}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </motion.div>
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={cn(
+                        'text-xs leading-snug',
+                        isDone && 'line-through text-muted-foreground'
+                      )}
+                    >
+                      {item.title}
+                    </p>
+                    {item.note && (
+                      <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                        {item.note}
+                      </p>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+          {toggleItem.isError && (
+            <p role="alert" className="mt-1 text-xs text-destructive">
+              {toggleItem.error.message}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* ── Comment section ── */}
       <div className="mt-3 pl-9">

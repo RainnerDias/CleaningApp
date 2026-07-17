@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -16,7 +16,15 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useCreateTask, useUpdateTask } from '../hooks/useTasks'
+import { Trash2, ChevronUp, ChevronDown, Plus, Loader2 } from 'lucide-react'
+import {
+  useCreateTask,
+  useUpdateTask,
+  useTaskItems,
+  useCreateTaskItem,
+  useUpdateTaskItem,
+  useDeleteTaskItem,
+} from '../hooks/useTasks'
 import type { Task } from '../types'
 import type { Room } from '@/features/rooms/types'
 import type { Category } from '@/features/categories/types'
@@ -82,6 +90,181 @@ interface TaskDialogProps {
   task?: Task | null
   rooms: Room[]
   categories: Category[]
+}
+
+// ─── SubtaskEditor ───────────────────────────────────────────────────────────
+
+interface SubtaskEditorProps {
+  taskId: string
+}
+
+/**
+ * Inline subtask (task item) editor displayed inside the TaskDialog when editing.
+ * Allows adding, reordering, and deleting subtasks via the task-items API.
+ */
+function SubtaskEditor({ taskId }: SubtaskEditorProps) {
+  const { data: items = [], isLoading } = useTaskItems(taskId)
+  const createItem = useCreateTaskItem()
+  const updateItem = useUpdateTaskItem()
+  const deleteItem = useDeleteTaskItem()
+
+  const [newTitle, setNewTitle] = useState('')
+  const [newNote, setNewNote] = useState('')
+
+  function handleAdd() {
+    const trimmed = newTitle.trim()
+    if (!trimmed) return
+    createItem.mutate(
+      { taskId, title: trimmed, note: newNote.trim() || undefined },
+      {
+        onSuccess: () => {
+          setNewTitle('')
+          setNewNote('')
+        },
+      }
+    )
+  }
+
+  function handleMoveUp(index: number) {
+    if (index === 0) return
+    const item = items[index]
+    const prev = items[index - 1]
+    updateItem.mutate({ taskId, itemId: item.id, displayOrder: prev.displayOrder })
+    updateItem.mutate({ taskId, itemId: prev.id, displayOrder: item.displayOrder })
+  }
+
+  function handleMoveDown(index: number) {
+    if (index === items.length - 1) return
+    const item = items[index]
+    const next = items[index + 1]
+    updateItem.mutate({ taskId, itemId: item.id, displayOrder: next.displayOrder })
+    updateItem.mutate({ taskId, itemId: next.id, displayOrder: item.displayOrder })
+  }
+
+  function handleDelete(itemId: string) {
+    deleteItem.mutate({ taskId, itemId })
+  }
+
+  const inputClass =
+    'flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
+
+  return (
+    <div className="border-t border-border pt-4 space-y-3">
+      <p className="text-sm font-medium">Subtarefas</p>
+
+      {isLoading && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+          Carregando...
+        </p>
+      )}
+
+      {/* Existing items */}
+      {items.length > 0 && (
+        <ul className="space-y-1.5" aria-label="Subtarefas existentes">
+          {items.map((item, index) => (
+            <li
+              key={item.id}
+              className="flex items-center gap-2 rounded-lg border border-border bg-muted/20 px-3 py-2"
+            >
+              {/* Reorder buttons */}
+              <div className="flex flex-col gap-0.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleMoveUp(index)}
+                  disabled={index === 0 || updateItem.isPending}
+                  aria-label={`Mover "${item.title}" para cima`}
+                  className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <ChevronUp className="size-3.5" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMoveDown(index)}
+                  disabled={index === items.length - 1 || updateItem.isPending}
+                  aria-label={`Mover "${item.title}" para baixo`}
+                  className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <ChevronDown className="size-3.5" aria-hidden="true" />
+                </button>
+              </div>
+
+              {/* Title + note */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm leading-snug truncate">{item.title}</p>
+                {item.note && (
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">{item.note}</p>
+                )}
+              </div>
+
+              {/* Delete */}
+              <button
+                type="button"
+                onClick={() => handleDelete(item.id)}
+                disabled={deleteItem.isPending}
+                aria-label={`Excluir subtarefa "${item.title}"`}
+                className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <Trash2 className="size-3.5" aria-hidden="true" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {items.length === 0 && !isLoading && (
+        <p className="text-xs text-muted-foreground">Nenhuma subtarefa cadastrada.</p>
+      )}
+
+      {/* Add new item */}
+      <div className="space-y-1.5 pt-1">
+        <input
+          type="text"
+          value={newTitle}
+          onChange={(e) => setNewTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              handleAdd()
+            }
+          }}
+          placeholder="Nova subtarefa..."
+          maxLength={255}
+          aria-label="Título da nova subtarefa"
+          className={inputClass}
+        />
+        <input
+          type="text"
+          value={newNote}
+          onChange={(e) => setNewNote(e.target.value)}
+          placeholder="Observação (opcional)"
+          maxLength={2000}
+          aria-label="Observação da nova subtarefa"
+          className={inputClass}
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={handleAdd}
+          disabled={!newTitle.trim() || createItem.isPending}
+          aria-busy={createItem.isPending}
+        >
+          {createItem.isPending ? (
+            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+          ) : (
+            <Plus className="size-3.5" aria-hidden="true" />
+          )}
+          Adicionar subtarefa
+        </Button>
+        {createItem.isError && (
+          <p role="alert" className="text-xs text-destructive">
+            {createItem.error.message}
+          </p>
+        )}
+      </div>
+    </div>
+  )
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -491,6 +674,9 @@ export function TaskDialog({ open, onOpenChange, task, rooms, categories }: Task
               </div>
             )}
           </div>
+
+          {/* ── Subtarefas section (only when editing an existing task) ── */}
+          {isEditing && task && <SubtaskEditor taskId={task.id} />}
 
           {/* Mutation error */}
           {mutationError && (

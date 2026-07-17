@@ -101,6 +101,7 @@ model Task {
   category  Category? @relation(fields: [categoryId], references: [id])
   frequency Frequency?
   schedules Schedule[]
+  items     TaskItem[]
 
   @@map("tasks")
 }
@@ -132,10 +133,11 @@ model Schedule {
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
-  task     Task          @relation(fields: [taskId], references: [id])
-  user     User          @relation(fields: [assignedTo], references: [id])
-  comments TaskComment[]
-  photos   TaskPhoto[]
+  task            Task                     @relation(fields: [taskId], references: [id])
+  user            User                     @relation(fields: [assignedTo], references: [id])
+  comments        TaskComment[]
+  photos          TaskPhoto[]
+  itemCompletions ScheduleItemCompletion[]
 
   @@unique([date, taskId, assignedTo])
   @@map("schedules")
@@ -193,4 +195,35 @@ model Setting {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("settings")
+}
+
+model TaskItem {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId       String   @map("task_id") @db.Uuid
+  title        String   @db.VarChar(255)
+  note         String?  @db.Text
+  displayOrder Int      @default(0) @map("display_order")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  completions ScheduleItemCompletion[]
+
+  @@map("task_items")
+}
+
+model ScheduleItemCompletion {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scheduleId  String    @map("schedule_id") @db.Uuid
+  taskItemId  String    @map("task_item_id") @db.Uuid
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  schedule    Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  taskItem    TaskItem  @relation(fields: [taskItemId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, taskItemId])
+  @@map("schedule_item_completions")
 }

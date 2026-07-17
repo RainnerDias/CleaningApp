@@ -97,4 +97,28 @@ export const scheduleService = {
 
     return scheduleRepository.clockOut(scheduleId)
   },
+
+  /**
+   * Toggles completion of a subtask within a schedule.
+   *
+   * Authorization rules:
+   *  - Admins may toggle any schedule item.
+   *  - Regular users may only toggle items in schedules assigned to them.
+   *
+   * @throws {Error} 'Schedule not found' when the schedule ID does not exist.
+   * @throws {Error} 'Unauthorized' when the caller does not own the schedule and is not an admin.
+   */
+  toggleItemCompletion: async (scheduleId: string, taskItemId: string, callerId: string) => {
+    const [schedule, caller] = await Promise.all([
+      prisma.schedule.findUnique({ where: { id: scheduleId }, select: { assignedTo: true } }),
+      prisma.user.findUnique({ where: { id: callerId }, select: { role: true } }),
+    ])
+
+    if (!schedule) throw new Error('Schedule not found')
+    if (caller?.role !== 'admin' && schedule.assignedTo !== callerId) {
+      throw new Error('Unauthorized')
+    }
+
+    return scheduleRepository.toggleItemCompletion(scheduleId, taskItemId)
+  },
 }

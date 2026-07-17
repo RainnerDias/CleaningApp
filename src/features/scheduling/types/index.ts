@@ -18,6 +18,12 @@ export interface ScheduleWithDetails {
     goldenRuleApplies: boolean
     room: { id: string; name: string; color: string; icon: string }
     category: { id: string; name: string; color: string } | null
+    items: {
+      id: string
+      title: string
+      note: string | null
+      displayOrder: number
+    }[]
   }
   user: { id: string; name: string; avatarUrl: string | null }
   comments: Array<{
@@ -27,4 +33,25 @@ export interface ScheduleWithDetails {
     user: { id: string; name: string }
   }>
   photos: Array<{ id: string; imageUrl: string }>
+  itemCompletions: {
+    id: string
+    taskItemId: string
+    completedAt: string | null
+  }[]
+}
+
+/**
+ * Derived type for displaying a task item with its completion state in a schedule.
+ * Built client-side by joining task.items with schedule.itemCompletions.
+ */
+export type TaskItemWithCompletion = {
+  /** task_items.id */
+  id: string
+  title: string
+  note: string | null
+  displayOrder: number
+  /** null = not done */
+  completedAt: string | null
+  /** schedule_item_completions.id — null if the completion record does not exist yet */
+  completionId: string | null
 }

@@ -2,7 +2,7 @@
 
 import { startOfDay, endOfDay } from 'date-fns'
 import { prisma } from '@/lib/prisma'
-import type { ScheduleStatus } from '@prisma/client'
+import type { ScheduleItemCompletion, ScheduleStatus } from '@prisma/client'
 
 /** Shared include for full schedule detail (used in single-day and date-range queries). */
 const scheduleInclude = {
@@ -10,6 +10,11 @@ const scheduleInclude = {
     include: {
       room: { select: { id: true, name: true, color: true, icon: true } },
       category: { select: { id: true, name: true, color: true } },
+      items: {
+        where: { active: true },
+        orderBy: { displayOrder: 'asc' as const },
+        select: { id: true, title: true, note: true, displayOrder: true },
+      },
     },
   },
   user: { select: { id: true, name: true, avatarUrl: true } },
@@ -17,7 +22,10 @@ const scheduleInclude = {
     include: { user: { select: { id: true, name: true } } },
     orderBy: { createdAt: 'desc' as const },
   },
-  photos: true,
+  photos: { select: { id: true, imageUrl: true } },
+  itemCompletions: {
+    select: { id: true, taskItemId: true, completedAt: true },
+  },
 } as const
 
 export const scheduleRepository = {
@@ -93,5 +101,89 @@ export const scheduleRepository = {
       (acc, row) => ({ ...acc, [row.status]: row._count.status }),
       {} as Record<string, number>
     )
+  },
+
+  /**
+   * Toggles the completion of a single task-item within a schedule.
+   *
+   * Behavior:
+   * - If no completion record exists → creates one with completedAt = now (toggle ON).
+   * - If a completion record exists with completedAt set → sets completedAt = null (toggle OFF).
+   * - If a completion record exists with completedAt = null → sets completedAt = now (toggle ON).
+   *
+   * Side effects (within the same transaction):
+   * - If toggling ON the last uncompleted active item → sets schedule.status = 'completed'.
+   * - If toggling OFF any item → sets schedule.status = 'pending'.
+   * - If the task has no active items, schedule status is not touched.
+   */
+  toggleItemCompletion: async (
+    scheduleId: string,
+    taskItemId: string
+  ): Promise<ScheduleItemCompletion> => {
+    return prisma.$transaction(async (tx) => {
+      // Resolve the task behind this schedule
+      const schedule = await tx.schedule.findUnique({
+        where: { id: scheduleId },
+        select: { taskId: true },
+      })
+      if (!schedule) throw new Error('Schedule not found')
+
+      // Find existing completion record (may not exist yet)
+      const existing = await tx.scheduleItemCompletion.findUnique({
+        where: { scheduleId_taskItemId: { scheduleId, taskItemId } },
+      })
+
+      // Determine new completedAt value
+      const newCompletedAt = existing?.completedAt ? null : new Date()
+
+      // Upsert the completion record
+      const completion = existing
+        ? await tx.scheduleItemCompletion.update({
+            where: { scheduleId_taskItemId: { scheduleId, taskItemId } },
+            data: { completedAt: newCompletedAt },
+          })
+        : await tx.scheduleItemCompletion.create({
+            data: { scheduleId, taskItemId, completedAt: newCompletedAt },
+          })
+
+      // Fetch all active items for the task
+      const taskItems = await tx.taskItem.findMany({
+        where: { taskId: schedule.taskId, active: true },
+        select: { id: true },
+      })
+
+      if (taskItems.length === 0) {
+        // No items — do not touch schedule status
+        return completion
+      }
+
+      // Fetch all completion records for this schedule's items
+      const allCompletions = await tx.scheduleItemCompletion.findMany({
+        where: { scheduleId, taskItemId: { in: taskItems.map((i) => i.id) } },
+        select: { taskItemId: true, completedAt: true },
+      })
+
+      // All items are done when every item has a completedAt value
+      const allDone = taskItems.every((item) => {
+        const comp = allCompletions.find((c) => c.taskItemId === item.id)
+        return comp?.completedAt != null
+      })
+
+      if (allDone) {
+        // Last item checked — mark schedule as completed
+        await tx.schedule.update({
+          where: { id: scheduleId },
+          data: { status: 'completed', completedAt: new Date() },
+        })
+      } else if (newCompletedAt === null) {
+        // An item was unchecked — revert schedule to pending
+        await tx.schedule.update({
+          where: { id: scheduleId },
+          data: { status: 'pending', completedAt: null },
+        })
+      }
+
+      return completion
+    })
   },
 }

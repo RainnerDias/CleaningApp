@@ -74,3 +74,88 @@ export function useDeleteTask() {
     },
   })
 }
+
+// ---------------------------------------------------------------------------
+// Task item (subtask) hooks
+// ---------------------------------------------------------------------------
+
+export type TaskItem = {
+  id: string
+  title: string
+  note: string | null
+  displayOrder: number
+  active: boolean
+  createdAt: string
+}
+
+export const TASK_ITEMS_QUERY_KEY = (taskId: string) => ['tasks', taskId, 'items'] as const
+
+/** Fetches all task items for a given task (admin). */
+export function useTaskItems(taskId: string | null | undefined) {
+  return useQuery<TaskItem[]>({
+    queryKey: TASK_ITEMS_QUERY_KEY(taskId ?? ''),
+    queryFn: () => fetch(`/api/tasks/${taskId}/items`).then((r) => handleResponse<TaskItem[]>(r)),
+    enabled: !!taskId,
+  })
+}
+
+/** Mutation: create a new task item via POST /api/tasks/:taskId/items */
+export function useCreateTaskItem() {
+  const queryClient = useQueryClient()
+  return useMutation<
+    TaskItem,
+    Error,
+    { taskId: string; title: string; note?: string; displayOrder?: number }
+  >({
+    mutationFn: ({ taskId, ...data }) =>
+      fetch(`/api/tasks/${taskId}/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }).then((r) => handleResponse<TaskItem>(r)),
+    onSuccess: (_data, { taskId }) => {
+      void queryClient.invalidateQueries({ queryKey: TASK_ITEMS_QUERY_KEY(taskId) })
+    },
+  })
+}
+
+/** Mutation: update a task item via PATCH /api/tasks/:taskId/items/:itemId */
+export function useUpdateTaskItem() {
+  const queryClient = useQueryClient()
+  return useMutation<
+    TaskItem,
+    Error,
+    {
+      taskId: string
+      itemId: string
+      title?: string
+      note?: string | null
+      displayOrder?: number
+      active?: boolean
+    }
+  >({
+    mutationFn: ({ taskId, itemId, ...data }) =>
+      fetch(`/api/tasks/${taskId}/items/${itemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }).then((r) => handleResponse<TaskItem>(r)),
+    onSuccess: (_data, { taskId }) => {
+      void queryClient.invalidateQueries({ queryKey: TASK_ITEMS_QUERY_KEY(taskId) })
+    },
+  })
+}
+
+/** Mutation: delete a task item via DELETE /api/tasks/:taskId/items/:itemId */
+export function useDeleteTaskItem() {
+  const queryClient = useQueryClient()
+  return useMutation<void, Error, { taskId: string; itemId: string }>({
+    mutationFn: async ({ taskId, itemId }) => {
+      const res = await fetch(`/api/tasks/${taskId}/items/${itemId}`, { method: 'DELETE' })
+      if (!res.ok) await handleResponse<void>(res)
+    },
+    onSuccess: (_data, { taskId }) => {
+      void queryClient.invalidateQueries({ queryKey: TASK_ITEMS_QUERY_KEY(taskId) })
+    },
+  })
+}
