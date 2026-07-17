@@ -7,6 +7,9 @@ import { prisma } from '@/lib/prisma'
 import { TodayClient } from '@/features/scheduling/components/TodayClient'
 import type { ScheduleWithDetails } from '@/features/scheduling/types'
 
+const GOLDEN_RULE_DEFAULT_TEXT =
+  'Regra de ouro: Retire todos os objetos → limpe embaixo, atrás, em cima e os próprios objetos → recoloque tudo no lugar.'
+
 const WEEKDAYS_PT = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'] as const
 const MONTHS_PT = [
   'janeiro',
@@ -35,7 +38,8 @@ export default async function TodayPage() {
   ])
 
   const schedules = JSON.parse(JSON.stringify(rawSchedules)) as ScheduleWithDetails[]
-  const goldenRule = (goldenRuleSetting?.value as { text: string } | null)?.text ?? ''
+  const goldenRule =
+    (goldenRuleSetting?.value as { text: string } | null)?.text ?? GOLDEN_RULE_DEFAULT_TEXT
 
   // Compute the date label server-side to prevent hydration mismatch from
   // timezone differences between the UTC server and the client's local time.

@@ -10,9 +10,9 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
-  Star,
   PartyPopper,
   Timer,
+  Pin,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
@@ -131,43 +131,35 @@ interface TodayClientProps {
 
 interface GoldenRuleBannerProps {
   text: string
-  onDismiss: () => void
 }
 
-function GoldenRuleBanner({ text, onDismiss }: GoldenRuleBannerProps) {
+/**
+ * Permanent banner that displays the golden rule.
+ * It is always visible when there is text — it cannot be dismissed.
+ */
+function GoldenRuleBanner({ text }: GoldenRuleBannerProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -6 }}
       transition={{ duration: 0.25 }}
       role="note"
       aria-label="Regra de Ouro"
-      className="mx-4 mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/40 dark:bg-amber-900/20"
+      className="mx-4 mb-4 rounded-xl border-l-4 border-amber-400 border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/40 dark:bg-amber-900/20"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2 min-w-0">
-          <Star
-            className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
-            aria-hidden="true"
-          />
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
-              Regra de Ouro
-            </p>
-            <p className="mt-0.5 text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
-              {text}
-            </p>
-          </div>
+      <div className="flex items-start gap-2 min-w-0">
+        <Pin
+          className="mt-0.5 size-4 shrink-0 rotate-45 text-amber-600 dark:text-amber-400"
+          aria-hidden="true"
+        />
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+            Regra de Ouro
+          </p>
+          <p className="mt-0.5 text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
+            {text}
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={onDismiss}
-          aria-label="Fechar regra de ouro"
-          className="shrink-0 rounded-md p-1 text-amber-600 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-        >
-          <X className="size-4" aria-hidden="true" />
-        </button>
       </div>
     </motion.div>
   )
@@ -774,17 +766,6 @@ export function TodayClient({
     })
   }
 
-  // ── Golden Rule dismissal ────────────────────────────────────────────────
-  // Dismissed state lives in React state (persists for the current page visit).
-  // sessionStorage is intentionally avoided here to satisfy the react-hooks/set-state-in-effect
-  // lint rule — Next.js App Router remounts the component on navigation anyway, so
-  // in-memory dismissal is equivalent to session-level dismissal within a visit.
-  const [goldenRuleDismissed, setGoldenRuleDismissed] = useState(false)
-
-  function handleDismissGoldenRule() {
-    setGoldenRuleDismissed(true)
-  }
-
   // ── Status mutation ──────────────────────────────────────────────────────
   const { mutate: updateStatus } = useUpdateScheduleStatus()
 
@@ -833,8 +814,7 @@ export function TodayClient({
   }, [schedules, optimisticStatuses])
 
   const showCelebration = totalCount > 0 && pendingCount === 0
-  const showGoldenRule =
-    goldenRule.length > 0 && schedules.some((s) => s.task.goldenRuleApplies) && !goldenRuleDismissed
+  const showGoldenRule = goldenRule.length > 0 && schedules.some((s) => s.task.goldenRuleApplies)
 
   // ── Room grouping ────────────────────────────────────────────────────────
   const roomGroups = useMemo(() => groupByRoom(schedules), [schedules])
@@ -910,16 +890,8 @@ export function TodayClient({
         )}
       </AnimatePresence>
 
-      {/* ── Golden Rule banner ── */}
-      <AnimatePresence>
-        {showGoldenRule && (
-          <GoldenRuleBanner
-            key="golden-rule"
-            text={goldenRule}
-            onDismiss={handleDismissGoldenRule}
-          />
-        )}
-      </AnimatePresence>
+      {/* ── Golden Rule banner — permanent, always visible when applicable ── */}
+      {showGoldenRule && <GoldenRuleBanner text={goldenRule} />}
 
       {/* ── Task list ── */}
       <div className="px-4">
