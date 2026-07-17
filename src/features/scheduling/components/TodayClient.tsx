@@ -248,7 +248,9 @@ function GoldenRuleBanner({ title, text }: GoldenRuleBannerProps) {
         <Pin className="mt-0.5 size-4 shrink-0 rotate-45 text-warning" aria-hidden="true" />
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-warning">{title}</p>
-          <p className="mt-0.5 text-sm text-warning-foreground/80 leading-relaxed">{text}</p>
+          <p className="mt-0.5 text-sm text-warning-foreground/80 leading-relaxed whitespace-pre-line">
+            {text}
+          </p>
         </div>
       </div>
     </motion.div>
