@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { QueryProvider } from '@/providers/query-provider'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <TooltipProvider>{children}</TooltipProvider>
         </QueryProvider>
         <Toaster richColors position="top-right" />
+        <SpeedInsights />
       </body>
     </html>
   )
