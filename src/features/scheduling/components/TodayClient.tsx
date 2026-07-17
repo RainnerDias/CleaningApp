@@ -118,6 +118,8 @@ interface TodayClientProps {
   user: { id: string; name: string }
   /** Server-fetched schedules used as React Query initial data */
   initialSchedules: ScheduleWithDetails[]
+  /** Title of the golden rule banner from admin settings */
+  goldenRuleTitle: string
   /** Text of the golden rule from admin settings */
   goldenRule: string
   /** Pre-formatted date label computed server-side (avoids timezone hydration mismatch) */
@@ -131,6 +133,7 @@ interface TodayClientProps {
 // ---------------------------------------------------------------------------
 
 interface GoldenRuleBannerProps {
+  title: string
   text: string
 }
 
@@ -138,7 +141,7 @@ interface GoldenRuleBannerProps {
  * Permanent banner that displays the golden rule.
  * It is always visible when there is text — it cannot be dismissed.
  */
-function GoldenRuleBanner({ text }: GoldenRuleBannerProps) {
+function GoldenRuleBanner({ title, text }: GoldenRuleBannerProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -6 }}
@@ -155,7 +158,7 @@ function GoldenRuleBanner({ text }: GoldenRuleBannerProps) {
         />
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
-            Regra de Ouro
+            {title}
           </p>
           <p className="mt-0.5 text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
             {text}
@@ -851,6 +854,7 @@ export function TodayClient({
   user,
   initialSchedules,
   goldenRule,
+  goldenRuleTitle,
   todayLabel,
   today,
 }: TodayClientProps) {
@@ -999,7 +1003,7 @@ export function TodayClient({
       </AnimatePresence>
 
       {/* ── Golden Rule banner — permanent, always visible when applicable ── */}
-      {showGoldenRule && <GoldenRuleBanner text={goldenRule} />}
+      {showGoldenRule && <GoldenRuleBanner title={goldenRuleTitle} text={goldenRule} />}
 
       {/* ── Task list ── */}
       <div className="px-4">

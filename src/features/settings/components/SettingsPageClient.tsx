@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { Star, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { useUpdateSetting } from '../hooks/useSettings'
 
 // ---------------------------------------------------------------------------
@@ -11,7 +13,7 @@ import { useUpdateSetting } from '../hooks/useSettings'
 // ---------------------------------------------------------------------------
 
 interface SettingsPageClientProps {
-  /** Server-prefetched text value — used to initialise the textarea */
+  initialGoldenRuleTitle: string
   initialGoldenRuleText: string
 }
 
@@ -19,11 +21,11 @@ interface SettingsPageClientProps {
 // GoldenRuleCard
 // ---------------------------------------------------------------------------
 
-function GoldenRuleCard({ initialGoldenRuleText }: SettingsPageClientProps) {
-  // Draft state is initialised once from the server-prefetched prop.
-  // The project's lint rules forbid calling setState inside effects, so we do
-  // not synchronise the draft with subsequent query refetches. An admin who
-  // wants to pick up an external change can simply refresh the page.
+function GoldenRuleCard({
+  initialGoldenRuleTitle,
+  initialGoldenRuleText,
+}: SettingsPageClientProps) {
+  const [draftTitle, setDraftTitle] = useState(initialGoldenRuleTitle)
   const [draftText, setDraftText] = useState(initialGoldenRuleText)
 
   const {
@@ -35,16 +37,19 @@ function GoldenRuleCard({ initialGoldenRuleText }: SettingsPageClientProps) {
     reset,
   } = useUpdateSetting('golden_rule')
 
-  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+  function handleTitleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setDraftTitle(e.target.value)
+    if (isSuccess || isError) reset()
+  }
+
+  function handleTextChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setDraftText(e.target.value)
-    // Clear any prior success/error banner when the user starts typing again
     if (isSuccess || isError) reset()
   }
 
   function handleSave() {
-    const trimmed = draftText.trim()
-    if (!trimmed || isPending) return
-    updateSetting(trimmed)
+    if (!draftText.trim() || isPending) return
+    updateSetting({ title: draftTitle.trim() || 'Regra de Ouro', text: draftText.trim() })
   }
 
   return (
@@ -63,8 +68,8 @@ function GoldenRuleCard({ initialGoldenRuleText }: SettingsPageClientProps) {
       {/* Card body */}
       <div className="px-6 py-5 space-y-4">
         <p className="text-sm text-muted-foreground">
-          Este texto aparece como um banner fixo no painel de tarefas do dia para todos os usuários.
-          Edite-o para refletir a metodologia de limpeza da casa.
+          Este banner aparece fixo no painel de tarefas do dia para todos os usuários. Edite o
+          título e o texto para refletir a metodologia de limpeza da casa.
         </p>
 
         {/* Live preview */}
@@ -74,7 +79,7 @@ function GoldenRuleCard({ initialGoldenRuleText }: SettingsPageClientProps) {
           className="rounded-lg border-l-4 border-amber-400 bg-amber-50 px-4 py-3 dark:bg-amber-900/20"
         >
           <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
-            Regra de Ouro — pré-visualização
+            {draftTitle.trim() || 'Regra de Ouro'} — pré-visualização
           </p>
           <p className="mt-1 text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
             {draftText.trim() || (
@@ -85,18 +90,29 @@ function GoldenRuleCard({ initialGoldenRuleText }: SettingsPageClientProps) {
           </p>
         </div>
 
-        {/* Textarea */}
+        {/* Title input */}
         <div className="space-y-1.5">
-          <label htmlFor="golden-rule-textarea" className="text-sm font-medium text-foreground">
-            Texto da regra
-          </label>
+          <Label htmlFor="golden-rule-title">Nome do banner</Label>
+          <Input
+            id="golden-rule-title"
+            value={draftTitle}
+            onChange={handleTitleChange}
+            maxLength={80}
+            placeholder="Ex: Regra de Ouro"
+            disabled={isPending}
+          />
+        </div>
+
+        {/* Text textarea */}
+        <div className="space-y-1.5">
+          <Label htmlFor="golden-rule-textarea">Texto do banner</Label>
           <Textarea
             id="golden-rule-textarea"
             value={draftText}
-            onChange={handleChange}
+            onChange={handleTextChange}
             rows={4}
             maxLength={500}
-            placeholder="Descreva a regra de ouro de limpeza..."
+            placeholder="Descreva a regra de limpeza..."
             aria-describedby="golden-rule-char-count"
             disabled={isPending}
             className="min-h-[100px]"
@@ -162,7 +178,10 @@ function GoldenRuleCard({ initialGoldenRuleText }: SettingsPageClientProps) {
  * - "Salvar" calls PATCH /api/settings/golden_rule and shows inline feedback.
  * - A live preview above the textarea shows the text as users will see it.
  */
-export function SettingsPageClient({ initialGoldenRuleText }: SettingsPageClientProps) {
+export function SettingsPageClient({
+  initialGoldenRuleTitle,
+  initialGoldenRuleText,
+}: SettingsPageClientProps) {
   return (
     <div className="px-4 md:px-6 pt-6 pb-8 max-w-3xl mx-auto space-y-6">
       {/* Page header */}
@@ -173,7 +192,10 @@ export function SettingsPageClient({ initialGoldenRuleText }: SettingsPageClient
         </p>
       </div>
 
-      <GoldenRuleCard initialGoldenRuleText={initialGoldenRuleText} />
+      <GoldenRuleCard
+        initialGoldenRuleTitle={initialGoldenRuleTitle}
+        initialGoldenRuleText={initialGoldenRuleText}
+      />
     </div>
   )
 }

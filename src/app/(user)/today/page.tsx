@@ -38,8 +38,9 @@ export default async function TodayPage() {
   ])
 
   const schedules = JSON.parse(JSON.stringify(rawSchedules)) as ScheduleWithDetails[]
-  const goldenRule =
-    (goldenRuleSetting?.value as { text: string } | null)?.text ?? GOLDEN_RULE_DEFAULT_TEXT
+  const val = goldenRuleSetting?.value as { title?: string; text?: string } | null
+  const goldenRule = val?.text ?? GOLDEN_RULE_DEFAULT_TEXT
+  const goldenRuleTitle = val?.title ?? 'Regra de Ouro'
 
   // Compute the date label server-side to prevent hydration mismatch from
   // timezone differences between the UTC server and the client's local time.
@@ -50,6 +51,7 @@ export default async function TodayPage() {
       user={{ id: user.id, name: user.name }}
       initialSchedules={schedules}
       goldenRule={goldenRule}
+      goldenRuleTitle={goldenRuleTitle}
       todayLabel={todayLabel}
       today={today.toISOString()}
     />

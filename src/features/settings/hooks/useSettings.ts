@@ -14,7 +14,7 @@ export const settingKeys = {
 // Types
 // ---------------------------------------------------------------------------
 
-type SettingValue = { text: string }
+type SettingValue = { title: string; text: string }
 
 interface SettingResponse {
   key: string
@@ -64,8 +64,8 @@ export function useSettingQuery(key: string, initialData?: SettingResponse) {
 export function useUpdateSetting(key: string) {
   const qc = useQueryClient()
 
-  return useMutation<SettingResponse, Error, string>({
-    mutationFn: async (value: string) => {
+  return useMutation<SettingResponse, Error, SettingValue>({
+    mutationFn: async (value: SettingValue) => {
       const res = await fetch(`/api/settings/${encodeURIComponent(key)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

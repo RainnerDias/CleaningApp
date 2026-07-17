@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { prisma } from '@/lib/prisma'
 
+const GOLDEN_RULE_DEFAULT_TITLE = 'Regra de Ouro'
 const GOLDEN_RULE_DEFAULT_TEXT =
   'Regra de ouro: Retire todos os objetos → limpe embaixo, atrás, em cima e os próprios objetos → recoloque tudo no lugar.'
 
@@ -24,7 +25,10 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
     if (!setting) {
       if (key === 'golden_rule') {
-        return NextResponse.json({ key, value: { text: GOLDEN_RULE_DEFAULT_TEXT } })
+        return NextResponse.json({
+          key,
+          value: { title: GOLDEN_RULE_DEFAULT_TITLE, text: GOLDEN_RULE_DEFAULT_TEXT },
+        })
       }
       return NextResponse.json(
         { error: { code: 'NOT_FOUND', message: `Setting "${key}" not found` } },
@@ -77,21 +81,37 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     )
   }
 
-  const text = (body as { value?: unknown }).value
-  if (typeof text !== 'string' || text.trim().length === 0) {
+  const val = (body as { value?: unknown }).value
+  if (
+    typeof val !== 'object' ||
+    val === null ||
+    typeof (val as { text?: unknown }).text !== 'string' ||
+    (val as { text: string }).text.trim().length === 0
+  ) {
     return NextResponse.json(
-      { error: { code: 'VALIDATION_ERROR', message: '"value" must be a non-empty string' } },
+      {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: '"value" must be an object with a non-empty "text" field',
+        },
+      },
       { status: 422 }
     )
+  }
+
+  const { title, text } = val as { title?: string; text: string }
+  const savedValue = {
+    title: (title ?? '').trim() || GOLDEN_RULE_DEFAULT_TITLE,
+    text: text.trim(),
   }
 
   try {
     const setting = await prisma.setting.upsert({
       where: { key },
-      update: { value: { text: text.trim() } },
+      update: { value: savedValue },
       create: {
         key,
-        value: { text: text.trim() },
+        value: savedValue,
         description:
           key === 'golden_rule'
             ? 'Regra de ouro exibida para usuários no painel de hoje'
