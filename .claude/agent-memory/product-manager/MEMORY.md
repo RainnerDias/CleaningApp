@@ -1,0 +1,1 @@
+- [Casa Limpa Project Context](project-casa-limpa.md) — Domain, personas (Cleaner + Admin), and clock-in/clock-out feature backlog context

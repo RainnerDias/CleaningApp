@@ -1,1 +1,2 @@
 - [Project Stack](project-stack.md) — Tech stack, route groups, Supabase env key names, Prisma adapter notes for Casa Limpa
+- [Feedback: No setState in Effects](feedback-no-setstate-in-effect.md) — Project ESLint rule bans setState inside useEffect body

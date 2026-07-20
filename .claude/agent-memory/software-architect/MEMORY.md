@@ -1,0 +1,1 @@
+- [Clock In/Out Feature Design](project-clock-feature.md) — Architecture decisions, API contract, DB strategy, and resolved OQs for the clock feature
