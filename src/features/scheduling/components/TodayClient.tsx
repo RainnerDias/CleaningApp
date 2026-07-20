@@ -964,8 +964,8 @@ export function TodayClient({
 }: TodayClientProps) {
   const router = useRouter()
 
-  // Format the viewDate as yyyy-MM-dd for the hook and nav hrefs
-  const viewDateStr = format(parseISO(viewDate), 'yyyy-MM-dd')
+  // viewDate is already yyyy-MM-dd — use directly to avoid UTC/local timezone mismatch
+  const viewDateStr = viewDate
 
   const firstName = user.name.split(' ')[0] ?? user.name
 

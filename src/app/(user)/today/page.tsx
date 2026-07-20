@@ -59,7 +59,7 @@ export default async function TodayPage({
       goldenRule={goldenRule}
       goldenRuleTitle={goldenRuleTitle}
       todayLabel={todayLabel}
-      viewDate={viewDate.toISOString()}
+      viewDate={format(viewDate, 'yyyy-MM-dd')}
       isToday={isToday}
       viewAsUserId={user.role === 'admin' && viewAs ? viewAs : undefined}
     />
