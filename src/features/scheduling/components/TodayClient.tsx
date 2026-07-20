@@ -478,7 +478,7 @@ function TaskCard({ schedule, effectiveStatus, onToggle, onSkip }: TaskCardProps
         <div className="flex-1 min-w-0">
           <p
             className={cn(
-              'text-sm font-medium leading-snug',
+              'text-base font-medium leading-snug',
               isCompleted && 'line-through text-muted-foreground'
             )}
           >
@@ -584,7 +584,7 @@ function TaskCard({ schedule, effectiveStatus, onToggle, onSkip }: TaskCardProps
                   <div className="flex-1 min-w-0">
                     <p
                       className={cn(
-                        'text-xs leading-snug',
+                        'text-sm leading-snug',
                         isDone && 'line-through text-muted-foreground'
                       )}
                     >
@@ -908,7 +908,7 @@ function RoomSection({ room, schedules, optimisticStatuses, onToggle, onSkip }: 
         <span className="text-lg leading-none" aria-hidden="true">
           {room.icon}
         </span>
-        <h2 className="text-sm font-semibold text-foreground">{room.name}</h2>
+        <h2 className="text-base font-semibold text-foreground">{room.name}</h2>
         <span
           className="h-1.5 w-1.5 rounded-full shrink-0"
           style={{ backgroundColor: room.color }}
