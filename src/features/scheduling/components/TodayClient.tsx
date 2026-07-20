@@ -9,12 +9,16 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   PartyPopper,
   Timer,
   Pin,
 } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, addDays, subDays, parseISO } from 'date-fns'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -217,8 +221,10 @@ interface TodayClientProps {
   goldenRule: string
   /** Pre-formatted date label computed server-side (avoids timezone hydration mismatch) */
   todayLabel: string
-  /** ISO date string representing the server's "today" reference point */
-  today: string
+  /** ISO date string of the date being viewed (may differ from today when navigating) */
+  viewDate: string
+  /** True when viewDate is the current calendar day */
+  isToday: boolean
   /** When the admin is previewing another user's view, the target user ID */
   viewAsUserId?: string
 }
@@ -952,12 +958,14 @@ export function TodayClient({
   goldenRule,
   goldenRuleTitle,
   todayLabel,
-  today,
+  viewDate,
+  isToday,
   viewAsUserId,
 }: TodayClientProps) {
-  // today ISO string is used only for query key scoping (not rendered directly,
-  // which avoids the server/client timezone hydration mismatch)
-  void today
+  const router = useRouter()
+
+  // Format the viewDate as yyyy-MM-dd for the hook and nav hrefs
+  const viewDateStr = format(parseISO(viewDate), 'yyyy-MM-dd')
 
   const firstName = user.name.split(' ')[0] ?? user.name
 
@@ -969,7 +977,11 @@ export function TodayClient({
   )
 
   // ── Data fetching ────────────────────────────────────────────────────────
-  const { data: schedules = initialSchedules } = useTodaySchedules(initialSchedules, viewAsUserId)
+  const { data: schedules = initialSchedules } = useTodaySchedules(
+    initialSchedules,
+    viewAsUserId,
+    viewDateStr
+  )
 
   // ── Optimistic status state ──────────────────────────────────────────────
   const [optimisticStatuses, setOptimisticStatuses] = useState<Record<string, ScheduleStatus>>({})
@@ -1051,7 +1063,42 @@ export function TodayClient({
             <h1 className="text-2xl font-bold tracking-tight" suppressHydrationWarning>
               {getGreeting(hour)}, {firstName}! {getTimeEmoji(hour)}
             </h1>
-            <p className="mt-0.5 text-sm text-muted-foreground">{todayLabel}</p>
+            {/* Day navigation */}
+            <div className="mt-1 flex items-center gap-0.5">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Dia anterior"
+                onClick={() =>
+                  router.push(
+                    `/today?date=${format(subDays(parseISO(viewDate), 1), 'yyyy-MM-dd')}${viewAsUserId ? `&viewAs=${viewAsUserId}` : ''}`
+                  )
+                }
+              >
+                <ChevronLeft className="size-3.5" aria-hidden="true" />
+              </Button>
+              <span className="text-sm text-muted-foreground px-0.5">{todayLabel}</span>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Próximo dia"
+                onClick={() =>
+                  router.push(
+                    `/today?date=${format(addDays(parseISO(viewDate), 1), 'yyyy-MM-dd')}${viewAsUserId ? `&viewAs=${viewAsUserId}` : ''}`
+                  )
+                }
+              >
+                <ChevronRight className="size-3.5" aria-hidden="true" />
+              </Button>
+              {!isToday && (
+                <Link
+                  href={viewAsUserId ? `/today?viewAs=${viewAsUserId}` : '/today'}
+                  className="ml-1 rounded px-1.5 py-0.5 text-xs font-medium text-brand bg-brand/10 hover:bg-brand/20 transition-colors"
+                >
+                  Hoje
+                </Link>
+              )}
+            </div>
 
             {/* Summary pills */}
             {totalCount > 0 && (

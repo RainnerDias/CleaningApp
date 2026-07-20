@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { startOfDay } from 'date-fns'
+import { startOfDay, parseISO } from 'date-fns'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { scheduleService } from '@/features/scheduling/services/scheduleService'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * GET /api/schedules/today[?userId=<id>]
+ * GET /api/schedules/today[?userId=<id>][&date=yyyy-MM-dd]
  *
- * Returns today's schedules for the authenticated user.
- * Admins may pass ?userId=<id> to preview another user's schedules.
+ * Returns schedules for the authenticated user on the given date (defaults to today).
+ * Admins may pass ?userId=<id> to fetch another user's schedules.
  */
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser()
@@ -20,17 +20,20 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const requestedUserId = request.nextUrl.searchParams.get('userId')
+  const { searchParams } = request.nextUrl
+  const requestedUserId = searchParams.get('userId')
+  const dateParam = searchParams.get('date')
+
   const targetUserId = user.role === 'admin' && requestedUserId ? requestedUserId : user.id
+  const targetDate = startOfDay(dateParam ? parseISO(dateParam) : new Date())
 
   try {
-    const today = startOfDay(new Date())
-    const schedules = await scheduleService.getByDate(today, targetUserId)
+    const schedules = await scheduleService.getByDate(targetDate, targetUserId)
     return NextResponse.json(schedules)
   } catch (err) {
     console.error('[GET /api/schedules/today]', err)
     return NextResponse.json(
-      { error: { code: 'INTERNAL_ERROR', message: "Failed to fetch today's schedules" } },
+      { error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch schedules' } },
       { status: 500 }
     )
   }

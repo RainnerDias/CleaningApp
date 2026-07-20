@@ -122,23 +122,32 @@ type CommentResponse = {
 type PhotoResponse = { id: string; imageUrl: string }
 
 /**
- * Fetches today's schedules for the authenticated user.
+ * Fetches schedules for the authenticated user on a given date.
  * Uses server-fetched data as the initial value to avoid a loading flash.
- * Auto-refreshes every 60 seconds so status changes from other sessions appear.
+ * Auto-refreshes every 60 seconds for today; disables polling for other dates.
  * Admins can pass viewAsUserId to preview another user's schedules.
  */
-export function useTodaySchedules(initialData: ScheduleWithDetails[], viewAsUserId?: string) {
-  const today = format(new Date(), 'yyyy-MM-dd')
-  const url = viewAsUserId
-    ? `/api/schedules/today?userId=${encodeURIComponent(viewAsUserId)}`
-    : '/api/schedules/today'
+export function useTodaySchedules(
+  initialData: ScheduleWithDetails[],
+  viewAsUserId?: string,
+  viewDate?: string
+) {
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const dateStr = viewDate ?? todayStr
+  const isToday = dateStr === todayStr
+
+  const params = new URLSearchParams()
+  if (viewAsUserId) params.set('userId', viewAsUserId)
+  if (viewDate) params.set('date', viewDate)
+  const url = `/api/schedules/today${params.size > 0 ? `?${params.toString()}` : ''}`
+
   return useQuery<ScheduleWithDetails[]>({
-    queryKey: [...scheduleKeys.byDate(today), viewAsUserId ?? 'self'],
+    queryKey: [...scheduleKeys.byDate(dateStr), viewAsUserId ?? 'self'],
     queryFn: () => fetch(url).then((r) => handleResponse<ScheduleWithDetails[]>(r)),
     initialData,
-    initialDataUpdatedAt: 0, // treat server data as immediately stale → refetch in background
-    staleTime: 30_000, // 30 s — today's data changes frequently
-    refetchInterval: 60_000, // auto-refresh every minute
+    initialDataUpdatedAt: 0,
+    staleTime: isToday ? 30_000 : Infinity,
+    refetchInterval: isToday ? 60_000 : false,
   })
 }
 

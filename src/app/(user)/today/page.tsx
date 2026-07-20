@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { startOfDay, format } from 'date-fns'
+import { startOfDay, format, parseISO, isSameDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { getCurrentUser } from '@/features/auth/services/authService'
 import { scheduleService } from '@/features/scheduling/services/scheduleService'
@@ -10,36 +10,21 @@ import type { ScheduleWithDetails } from '@/features/scheduling/types'
 const GOLDEN_RULE_DEFAULT_TEXT =
   'Regra de ouro: Retire todos os objetos → limpe embaixo, atrás, em cima e os próprios objetos → recoloque tudo no lugar.'
 
-const WEEKDAYS_PT = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'] as const
-const MONTHS_PT = [
-  'janeiro',
-  'fevereiro',
-  'março',
-  'abril',
-  'maio',
-  'junho',
-  'julho',
-  'agosto',
-  'setembro',
-  'outubro',
-  'novembro',
-  'dezembro',
-] as const
-
-void MONTHS_PT
-
 export default async function TodayPage({
   searchParams,
 }: {
-  searchParams: Promise<{ viewAs?: string }>
+  searchParams: Promise<{ viewAs?: string; date?: string }>
 }) {
   const user = await getCurrentUser()
   if (!user) redirect('/login')
 
-  const today = startOfDay(new Date())
+  const { viewAs, date: dateParam } = await searchParams
+
+  // Parse the ?date= param; fall back to today if absent or invalid
+  const viewDate = startOfDay(dateParam ? parseISO(dateParam) : new Date())
+  const isToday = isSameDay(viewDate, startOfDay(new Date()))
 
   // Admins can preview another user's today view via ?viewAs=<userId>
-  const { viewAs } = await searchParams
   let targetUser = { id: user.id, name: user.name }
 
   if (user.role === 'admin' && viewAs) {
@@ -51,7 +36,7 @@ export default async function TodayPage({
   }
 
   const [rawSchedules, goldenRuleSetting] = await Promise.all([
-    scheduleService.getByDate(today, targetUser.id),
+    scheduleService.getByDate(viewDate, targetUser.id),
     prisma.setting.findUnique({ where: { key: 'golden_rule' } }),
   ])
 
@@ -62,7 +47,10 @@ export default async function TodayPage({
 
   // Compute the date label server-side to prevent hydration mismatch from
   // timezone differences between the UTC server and the client's local time.
-  const todayLabel = `Hoje é ${WEEKDAYS_PT[today.getDay()]}, ${format(today, "d 'de' MMMM", { locale: ptBR })}`
+  const dayName = format(viewDate, 'EEEE', { locale: ptBR })
+  const capitalDay = dayName.charAt(0).toUpperCase() + dayName.slice(1)
+  const dateLabel = `${capitalDay}, ${format(viewDate, "d 'de' MMMM", { locale: ptBR })}`
+  const todayLabel = isToday ? `Hoje é ${dateLabel}` : dateLabel
 
   return (
     <TodayClient
@@ -71,7 +59,8 @@ export default async function TodayPage({
       goldenRule={goldenRule}
       goldenRuleTitle={goldenRuleTitle}
       todayLabel={todayLabel}
-      today={today.toISOString()}
+      viewDate={viewDate.toISOString()}
+      isToday={isToday}
       viewAsUserId={user.role === 'admin' && viewAs ? viewAs : undefined}
     />
   )
